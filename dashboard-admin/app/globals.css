@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --table-bg: #1a1a1a;
+  --table-border: #374151;
+  --table-text: #ededed;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #171717;
+    --table-bg: #ffffff;
+    --table-border: #e5e7eb;
+    --table-text: #171717;
+  }
+}
+
+body {
+  @apply text-foreground bg-background font-sans;
+}
+
+@layer components {
+  .bg-table-bg {
+    @apply bg-[var(--table-bg)];
+  }
+  .text-table-text {
+    @apply text-[var(--table-text)];
+  }
+  .border-table-border {
+    @apply border-[var(--table-border)];
+  }
+}
+
+table {
+  @apply bg-table-bg text-table-text border-table-border;
+}
+
+th, td {
+  @apply border-table-border;
+}

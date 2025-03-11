@@ -1,0 +1,4 @@
+//ignorer les .env
+.env*
+//ignorer docker-compose.yml
+docker-compose.yml
