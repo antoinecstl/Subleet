@@ -8,53 +8,39 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function GET() {
   try {
-    const { data, error } = await supabase
+    // First fetch all clients
+    const { data: clients, error: clientsError } = await supabase
       .from('clients')
-      .select(`
-        id,
-        name,
-        email,
-        api_keys (
-          key,
-          created_at,
-          revoked,
-          total_calls
-        )
-      `)
-      .order('created_at', { foreignTable: 'api_keys' });
+      .select('*')
+      .order('creation_date', { ascending: false });
 
-    if (error) {
-      throw error;
+    if (clientsError) {
+      throw clientsError;
     }
 
-    // Transform the nested data structure to create an entry for each API key
-    const transformedData = data.flatMap(client => {
-      // If client has no API keys, return one entry with null key
-      if (!client.api_keys || client.api_keys.length === 0) {
-        return [{
-          id: client.id,
-          name: client.name,
-          email: client.email,
-          key: null,
-          created_at: null,
-          revoked: false,
-          total_calls: 0
-        }];
-      }
+    // Then fetch all projects
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('*');
 
-      // Create an entry for each API key
-      return client.api_keys.map(apiKey => ({
-        id: client.id,
-        name: client.name,
-        email: client.email,
-        key: apiKey.key,
-        created_at: apiKey.created_at,
-        revoked: apiKey.revoked,
-        total_calls: apiKey.total_calls
-      }));
+    if (projectsError) {
+      throw projectsError;
+    }
+
+    // Map projects to clients
+    const clientsWithProjects = clients.map(client => {
+      const clientProjects = projects.filter(project => project.project_owner === client.id);
+      const totalCalls = clientProjects.reduce((sum, project) => sum + project.total_call, 0);
+      
+      return {
+        ...client,
+        projects: clientProjects,
+        project_count: clientProjects.length,
+        total_calls: totalCalls
+      };
     });
 
-    return NextResponse.json(transformedData);
+    return NextResponse.json(clientsWithProjects);
 
   } catch (error) {
     console.error('Error:', error);

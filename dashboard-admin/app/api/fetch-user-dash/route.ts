@@ -19,7 +19,7 @@ export async function GET() {
   const now = Date.now();
   const lastRequest = rateLimit.get(ip);
 
-  // Vérifier le rate limiting
+  // Check rate limiting
   if (lastRequest && now - lastRequest < RATE_LIMIT_DURATION) {
     return NextResponse.json(
       { error: 'Too many requests' },
@@ -27,10 +27,10 @@ export async function GET() {
     );
   }
 
-  // Mettre à jour le timestamp de la dernière requête
+  // Update last request timestamp
   rateLimit.set(ip, now);
 
-  // Nettoyer les anciennes entrées toutes les 5 minutes
+  // Clean old entries every 5 minutes
   if (now % 300000 < RATE_LIMIT_DURATION) {
     for (const [key, timestamp] of rateLimit.entries()) {
       if (now - timestamp > 300000) {
@@ -52,55 +52,34 @@ export async function GET() {
 
     const primaryEmail = user.emailAddresses[0].emailAddress;
 
-    // Modification de la requête Supabase pour gérer le cas où aucun résultat n'est trouvé
-    const { data, error } = await supabase
+    // Find client by email
+    const { data: clientData, error: clientError } = await supabase
       .from('clients')
-      .select(`
-        id,
-        name,
-        email,
-        api_keys (
-          key,
-          created_at,
-          revoked,
-          total_calls
-        )
-      `)
-      .eq('email', primaryEmail);
+      .select('*')
+      .eq('email', primaryEmail)
+      .single();
 
-    if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json({ error: 'Database error' }, { status: 500 });
+    if (clientError) {
+      console.error('Client error:', clientError);
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Si aucun utilisateur n'est trouvé, renvoyer un tableau vide
-    if (!data || data.length === 0) {
-      return NextResponse.json([]);
+    // Find projects associated with this client
+    const { data: projectsData, error: projectsError } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('project_owner', clientData.id)
+      .order('project_name', { ascending: true });
+
+    if (projectsError) {
+      console.error('Projects error:', projectsError);
+      return NextResponse.json({ error: 'Error fetching projects' }, { status: 500 });
     }
 
-    // Transformation des données pour le premier (et normalement unique) utilisateur trouvé
-    const client = data[0];
-    const transformedData = client.api_keys && client.api_keys.length > 0
-      ? client.api_keys.map(apiKey => ({
-          id: client.id,
-          name: client.name,
-          email: client.email,
-          key: apiKey.key,
-          created_at: apiKey.created_at,
-          revoked: apiKey.revoked,
-          total_calls: apiKey.total_calls
-        }))
-      : [{
-          id: client.id,
-          name: client.name,
-          email: client.email,
-          key: null,
-          created_at: null,
-          revoked: false,
-          total_calls: 0
-        }];
-
-    return NextResponse.json(transformedData);
+    return NextResponse.json({
+      client: clientData,
+      projects: projectsData
+    });
 
   } catch (error) {
     console.error('Server error:', error);

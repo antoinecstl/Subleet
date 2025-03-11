@@ -2,63 +2,57 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from "@clerk/nextjs";
-import { FaCopy } from 'react-icons/fa';
 import { format } from 'date-fns';
 import Toast from '../components/Toast';
 
-interface ApiKey {
-  id: number;
-  name: string;
-  email: string;
-  key: string | null;
-  created_at: string;
-  revoked: boolean;
-  total_calls: number;
+interface Project {
+  project_id: number;
+  project_name: string;
+  context: string;
+  total_call: number;
+  working: boolean;
 }
 
 export default function Dashboard() {
   const { user } = useUser();
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [clientProfile, setClientProfile] = useState<any>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [visibleApiKeys, setVisibleApiKeys] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const lastFetchRef = useRef<number>(0);
   const RATE_LIMIT_DELAY = 10000; 
-  
+
   const loadCachedData = () => {
     const cached = localStorage.getItem('apiKeysCache');
     if (cached) {
       try {
         const parsedData = JSON.parse(cached);
-        setApiKeys(parsedData);
+        setProjects(parsedData);
         setIsLoading(false);
-        return true; // Indique que des données ont été chargées depuis le cache
+        return true;
       } catch (e) {
         console.error('Error parsing cached data');
       }
     }
-    return false; // Indique qu'aucune donnée n'a été chargée depuis le cache
+    return false;
   };
 
   useEffect(() => {
     if (user) {
       const hasCachedData = loadCachedData();
-      // Ne faire le fetch initial que si aucune donnée n'est en cache
       if (!hasCachedData) {
         fetchUserData();
       } else {
-        // Si on a des données en cache, on attend un peu avant de les rafraîchir
         const timer = setTimeout(() => {
           fetchUserData();
-        }, 2000); // Attendre 1 seconde avant de rafraîchir
+        }, 2000);
         return () => clearTimeout(timer);
       }
     }
   }, [user]);
 
-  // Modifier la gestion du toast
   useEffect(() => {
     if (toast) {
       setToastVisible(true);
@@ -108,66 +102,26 @@ export default function Dashboard() {
 
       const data = await response.json();
       if (data.error) {
-        // Ne pas effacer les données existantes en cas d'erreur
         return;
       }
 
-      // Trier les clés : d'abord les actives (non révoquées), puis par date de création décroissante
-      const sortedData = [...data].sort((a, b) => {
-        // D'abord trier par statut (actif/révoqué)
-        if (a.revoked !== b.revoked) {
-          return a.revoked ? 1 : -1;
+      const { client, projects: projectsData } = data;
+      setClientProfile(client);
+
+      const sortedProjects = [...projectsData].sort((a: Project, b: Project) => {
+        if (a.working !== b.working) {
+          return a.working ? -1 : 1;
         }
-        // Ensuite trier par date de création (plus récent en premier)
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        return b.total_call - a.total_call;
       });
 
-      // Sauvegarder dans le localStorage
-      localStorage.setItem('apiKeysCache', JSON.stringify(sortedData));
-      setApiKeys(sortedData);
+      localStorage.setItem('apiKeysCache', JSON.stringify(sortedProjects));
+      setProjects(sortedProjects);
     } catch (error) {
       console.error('Failed to fetch user data:', error);
-      // Ne pas effacer les données existantes en cas d'erreur
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCopy = (apiKey: string) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(apiKey).then(() => {
-        setToast({ message: 'API Key copied to clipboard', type: 'success' });
-      }).catch(() => {
-        setToast({ message: 'Failed to copy API Key', type: 'error' });
-      });
-    } else {
-      const textArea = document.createElement("textarea");
-      textArea.value = apiKey;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        setToast({ message: 'API Key copied to clipboard', type: 'success' });
-      } catch (err) {
-        setToast({ message: 'Failed to copy API Key', type: 'error' });
-      }
-      document.body.removeChild(textArea);
-    }
-  };
-
-  const toggleApiKeyVisibility = (apiKey: string) => {
-    setVisibleApiKeys(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(apiKey)) {
-        newSet.delete(apiKey);
-      } else {
-        newSet.add(apiKey);
-      }
-      return newSet;
-    });
   };
 
   return (
@@ -176,68 +130,64 @@ export default function Dashboard() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="mt-4 text-gray-400">Loading your API keys...</p>
+            <p className="mt-4 text-gray-400">Loading your projects...</p>
           </div>
         ) : (
-          apiKeys.length === 0 ? (
-            <div className="text-center p-8 bg-table-bg border border-table-border rounded-lg shadow-lg">
-              <p className="text-lg text-gray-400">No API keys found for your account.</p>
-              <p className="mt-2 text-sm text-gray-500">Please contact the administrator to get access.</p>
-            </div>
-          ) : (
-            <div className="w-full overflow-x-auto">
-              <h1 className="text-3xl font-bold mb-8">Your API Keys</h1>
-              <table className="min-w-full bg-table-bg border border-table-border shadow-lg rounded-lg">
-                <thead className="bg-table-bg">
-                  <tr>
-                    <th className="py-3 px-4 border-b border-table-border text-left">API Key</th>
-                    <th className="py-3 px-4 border-b border-table-border text-center">Usage</th>
-                    <th className="py-3 px-4 border-b border-table-border text-center">Created At</th>
-                    <th className="py-3 px-4 border-b border-table-border text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {apiKeys.map((key, index) => (
-                    <tr key={index}>
-                      <td className="py-3 px-4 border-b border-table-border">
-                        {key.key ? (
-                          <div className="flex items-center space-x-2">
-                            <button 
-                              onClick={() => key.key && toggleApiKeyVisibility(key.key)}
-                              className="hover:text-blue-600 focus:outline-none"
-                            >
-                              {visibleApiKeys.has(key.key) 
-                                ? key.key 
-                                : `${key.key.slice(0,5)}*****${key.key.slice(-5)}`}
-                            </button>
-                            <button 
-                              onClick={() => key.key && handleCopy(key.key)}
-                              className="text-gray-300 hover:text-white focus:outline-none"
-                            >
-                              <FaCopy />
-                            </button>
-                          </div>
-                        ) : (
-                          'No API Key'
-                        )}
-                      </td>
-                      <td className="py-3 px-4 border-b border-table-border text-center">
-                        {key.total_calls}
-                      </td>
-                      <td className="py-3 px-4 border-b border-table-border text-center">
-                        {key.created_at ? format(new Date(key.created_at), 'dd/MM/yyyy HH:mm') : 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 border-b border-table-border text-center">
-                        <span className={`px-2 py-1 rounded ${key.revoked ? 'bg-red-500' : 'bg-green-500'}`}>
-                          {key.revoked ? 'Revoked' : 'Active'}
-                        </span>
-                      </td>
+          <>
+            {clientProfile && (
+              <div className="w-full mb-8 p-6 bg-table-bg border border-table-border rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-4">Profile</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p><span className="font-semibold">Name:</span> {clientProfile.name}</p>
+                    <p><span className="font-semibold">Email:</span> {clientProfile.email}</p>
+                  </div>
+                  <div>
+                    <p><span className="font-semibold">Phone:</span> {clientProfile.phone || 'N/A'}</p>
+                    <p>
+                      <span className="font-semibold">Created:</span> {clientProfile.creation_date 
+                        ? format(new Date(clientProfile.creation_date), 'dd/MM/yyyy') 
+                        : 'N/A'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {projects.length === 0 ? (
+              <div className="text-center p-8 bg-table-bg border border-table-border rounded-lg shadow-lg">
+                <p className="text-lg text-gray-400">No projects found for your account.</p>
+                <p className="mt-2 text-sm text-gray-500">Please contact the administrator for assistance.</p>
+              </div>
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <h1 className="text-3xl font-bold mb-8">Your Projects</h1>
+                <table className="min-w-full bg-table-bg border border-table-border shadow-lg rounded-lg">
+                  <thead className="bg-table-bg">
+                    <tr>
+                      <th className="py-3 px-4 border-b border-table-border text-left">Project Name</th>
+                      <th className="py-3 px-4 border-b border-table-border text-center">Total Calls</th>
+                      <th className="py-3 px-4 border-b border-table-border text-left">Context</th>
+                      <th className="py-3 px-4 border-b border-table-border text-center">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
+                  </thead>
+                  <tbody>
+                    {projects.map((project, index) => (
+                      <tr key={project.project_id}>
+                        <td className="py-3 px-4 border-b border-table-border">{project.project_name}</td>
+                        <td className="py-3 px-4 border-b border-table-border text-center">{project.total_call}</td>
+                        <td className="py-3 px-4 border-b border-table-border">{project.context}</td>
+                        <td className="py-3 px-4 border-b border-table-border text-center">
+                          <span className={`px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
+                            {project.working ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
         {toast && (

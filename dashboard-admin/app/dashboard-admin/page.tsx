@@ -1,39 +1,67 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { FaSync, FaSortUp, FaSortDown, FaCopy } from 'react-icons/fa'; // Import sort and copy icons
-import Fuse from 'fuse.js'; // Import fuse.js
-import { format } from 'date-fns'; // Import date-fns for date formatting
+import { FaSync, FaSortUp, FaSortDown } from 'react-icons/fa'; // Removed FaCopy
+import Fuse from 'fuse.js';
+import { format } from 'date-fns';
 import Toast from '../components/Toast';
+import { useRouter } from 'next/navigation';
 
-// Define Client interface
+// Update the Client interface to use project_count instead of project_list
 interface Client {
   id: number;
   name: string;
   email: string;
-  key: string | null;
-  created_at: string;
-  revoked: boolean;
-  total_calls: number;
+  phone: string;
+  creation_date: string;
+  project_count: number;
 }
 
 export default function DashboardAdmin() {
+  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [fuse, setFuse] = useState<Fuse<Client> | null>(null);
-  const [revokedFilter, setRevokedFilter] = useState<'All' | 'Yes' | 'No'>('All'); // Added filter state
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc'); // Added sort state
-  const [sortKey, setSortKey] = useState<'created_at' | 'total_calls'>('created_at'); // Added sort key state
-  const [clientToDelete, setClientToDelete] = useState<Client | null>(null); // Added state for deletion
-  const [name, setName] = useState(''); // Add state for name
-  const [email, setEmail] = useState(''); // Add state for email
-  const [clientToRevoke, setClientToRevoke] = useState<Client | null>(null); // Add state for revoke confirmation
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortKey, setSortKey] = useState<'creation_date'>('creation_date');
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [toastVisible, setToastVisible] = useState(false); // Added state for toast visibility
-  const [visibleApiKeys, setVisibleApiKeys] = useState<Set<string>>(new Set()); // Changed to track keys as strings
+  const [toastVisible, setToastVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Ajout d'états pour le formulaire d'ajout d'utilisateur
+  const [newName, setNewName] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+
+  // Fonction de gestion de l'ajout d'utilisateur
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || !newEmail) {
+      setToast({ message: "Nom et Email sont requis", type: 'error' });
+      return;
+    }
+    try {
+      const response = await fetch('/api/add_user-admin-dash', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Échec de l'ajout");
+      }
+      setToast({ message: data.message, type: 'success' });
+      setClients(prev => [...prev, data.client]); // Ajoute le nouvel utilisateur à la liste
+      setShowForm(false);
+      setNewName('');
+      setNewEmail('');
+      setNewPhone('');
+    } catch (err: any) {
+      setToast({ message: err.message, type: 'error' });
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -62,7 +90,7 @@ export default function DashboardAdmin() {
   useEffect(() => {
     if (clients.length > 0) {
       const options = {
-        keys: ['name', 'email', 'key', 'created_at'],
+        keys: ['name', 'email', 'phone', 'project_count', 'creation_date'],
         threshold: 0.3,
       };
       setFuse(new Fuse(clients, options));
@@ -84,19 +112,8 @@ export default function DashboardAdmin() {
     ? fuse.search(searchTerm).map(result => result.item)
     : clients;
 
-  // Apply revoked filter
-  const filteredByRevoked = revokedFilter !== 'All'
-    ? filteredClients.filter(client => revokedFilter === 'Yes' ? client.revoked : !client.revoked)
-    : filteredClients;
-
-  // Apply sorting
-  const sortedClients = [...filteredByRevoked].sort((a, b) => {
-    let compare = 0;
-    if (sortKey === 'created_at') {
-      compare = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    } else if (sortKey === 'total_calls') {
-      compare = a.total_calls - b.total_calls;
-    }
+  const sortedClients = [...filteredClients].sort((a, b) => {
+    const compare = new Date(a.creation_date).getTime() - new Date(b.creation_date).getTime();
     return sortOrder === 'asc' ? compare : -compare;
   });
 
@@ -114,7 +131,6 @@ export default function DashboardAdmin() {
         throw new Error(`Error: ${response.status}`);
       }
 
-      // Update the clients state by removing the deleted client
       setClients(clients.filter(client => client.id !== id));
     } catch (err) {
       if (err instanceof Error) {
@@ -122,90 +138,6 @@ export default function DashboardAdmin() {
       } else {
         console.error(err);
       }
-    }
-  };
-
-  const handleRevoke = async (apiKey: string): Promise<void> => {
-    try {
-      const response = await fetch('/api/revoke-admin-dash', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      // Refresh the clients list
-      await fetchClients();
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error(err.message);
-      } else {
-        console.error(err);
-      }
-    }
-  };
-
-  const handleAddUser = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/add_user-admin-dash', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name, email }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      // Refresh the clients list
-      await fetchClients();
-
-      // Reset form and hide it
-      setName('');
-      setEmail('');
-      setShowForm(false);
-    } catch (err) {
-      if (err instanceof Error) {
-        console.error(err.message);
-      } else {
-        console.error(err);
-      }
-    }
-  };
-
-  const handleCopy = (apiKey: string) => {
-    if (navigator.clipboard && window.isSecureContext) {
-      // Use navigator.clipboard API if available
-      navigator.clipboard.writeText(apiKey).then(() => {
-        setToast({ message: 'API Key copied to clipboard', type: 'success' });
-      }).catch(() => {
-        setToast({ message: 'Failed to copy API Key', type: 'error' });
-      });
-    } else {
-      // Fallback method for mobile devices
-      const textArea = document.createElement("textarea");
-      textArea.value = apiKey;
-      // Avoid scrolling to bottom
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        setToast({ message: 'API Key copied to clipboard', type: 'success' });
-      } catch (err) {
-        setToast({ message: 'Failed to copy API Key', type: 'error' });
-      }
-      document.body.removeChild(textArea);
     }
   };
 
@@ -220,56 +152,25 @@ export default function DashboardAdmin() {
     setClientToDelete(null);
   };
 
-  const confirmRevoke = () => {
-    if (clientToRevoke) {
-      if (clientToRevoke.key) {
-        handleRevoke(clientToRevoke.key);
-      }
-      setClientToRevoke(null);
-    }
-  };
-
-  const cancelRevoke = () => {
-    setClientToRevoke(null);
-  };
-
-  const toggleApiKeyVisibility = (apiKey: string) => { // Changed parameter to apiKey
-    setVisibleApiKeys(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(apiKey)) {
-        newSet.delete(apiKey);
-      } else {
-        newSet.add(apiKey);
-      }
-      return newSet;
-    });
-  };
-
   return (
     <div className="min-h-screen p-4 sm:p-8 pb-20 bg-background text-foreground">
-      <main className="flex flex-col items-center sm:items-start mt-16 w-full">        
-        {/* Filters */}
+      <main className="flex flex-col items-center sm:items-start mt-16 w-full">
+        {/* Filters et section d'ajout */}
         {!isLoading && (
           <div className="flex flex-col sm:flex-row w-full gap-4">
-            {/* Single Search Input */}
             <input 
               type="text" 
-              placeholder="Search by Name, Email, API Key, or Created At" 
+              placeholder="Search by Name, Email, Phone, Projects, or Created At" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="p-2 border rounded w-full sm:w-1/3 bg-background"
             />
-
-            {/* Revoked Filter */}
-            <select
-              value={revokedFilter}
-              onChange={(e) => setRevokedFilter(e.target.value as 'All' | 'Yes' | 'No')}
-              className="p-2 border rounded bg-background"
+            <button 
+              onClick={() => setShowForm(true)} 
+              className="bg-gradient-to-r from-blue-700 to-purple-700 text-white py-2 px-4 rounded"
             >
-              <option value="All">All</option>
-              <option value="Yes">Revoked</option>
-              <option value="No">Not revoked</option>
-            </select>
+              Add Client
+            </button>
           </div>
         )}
 
@@ -279,176 +180,107 @@ export default function DashboardAdmin() {
             <p className="mt-4 text-gray-400">Loading client data...</p>
           </div>
         ) : (
-          <>
-            <div className="overflow-x-auto w-full mt-8 relative">
-              <table className="min-w-full bg-table-bg rounded-lg border border-separate ">
-                <thead className="bg-table-bg">
-                  <tr>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Name</th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Email</th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text">API Key</th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text" >
-                      <div className="flex items-center justify-center">
-                      <span>Usage</span>
-                      <button 
-                        onClick={() => {
-                          setSortKey('total_calls');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                        className="ml-2 inline-flex items-center"
-                      >
-                        {sortKey === 'total_calls' && sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />}
-                      </button>
-                      </div>
-                    </th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                      <div className="flex items-center justify-center">
+          <div className="overflow-x-auto w-full mt-8 relative">
+            <table className="min-w-full bg-table-bg rounded-lg border border-separate ">
+              <thead className="bg-table-bg">
+                <tr>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Name</th>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Email</th>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Phone</th>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Projects</th>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">
+                    <div className="flex items-center justify-center">
                       <span>Created At</span>
                       <button 
                         onClick={() => {
-                          setSortKey('created_at');
+                          setSortKey('creation_date');
                           setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                         }}
                         className="ml-2 inline-flex items-center"
                       >
-                        {sortKey === 'created_at' && sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />}
+                        {sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />}
                       </button>
-                      </div>
-                    </th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                      Revoked
-                    </th>
-                    <th className="py-2 px-4 border-b border-table-border text-center text-table-text relative">
-                      Actions
-                      <FaSync 
-                        className="absolute top-1/2 right-2 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
-                        size={16}
-                        onClick={fetchClients}
-                        aria-label="Refresh Users"
-                      />
-                    </th>
+                    </div>
+                  </th>
+                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text relative">
+                    Actions
+                    <FaSync 
+                      className="absolute top-1/2 right-2 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
+                      size={16}
+                      onClick={fetchClients}
+                      aria-label="Refresh data"
+                    />
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedClients.map(client => (
+                  <tr 
+                    key={client.id} 
+                    className="cursor-pointer"
+                    onClick={() => router.push(`/dashboard-admin/client/${client.id}`)}
+                  >
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.name}</td>
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.email}</td>
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.phone}</td>
+                    {/* Replace project_list with project_count */}
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.project_count}</td>
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
+                      {isNaN(new Date(client.creation_date).getTime()) 
+                        ? 'Invalid Date' 
+                        : format(new Date(client.creation_date), 'dd/MM/yyyy HH:mm')}
+                    </td>
+                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
+                      {/* Delete button stops propagation */}
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setClientToDelete(client);
+                        }} 
+                        className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 transition duration-300"
+                      >
+                        Delete
+                      </button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {sortedClients.map(client => (
-                    <tr key={`${client.id}-${client.key}`}>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.name}</td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.email}</td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                        {client.key ? (
-                          <div className="flex items-center justify-center space-x-2">
-                            <button onClick={() => client.key && toggleApiKeyVisibility(client.key)} className="hover:text-blue-600 focus:outline-none">
-                              {visibleApiKeys.has(client.key) 
-                                ? client.key 
-                                : `${client.key.slice(0,5)}*****${client.key.slice(-5)}`}
-                            </button>
-                            
-                            <button 
-                              onClick={()  => client.key &&  handleCopy(client.key)} 
-                              className="text-gray-300 hover:text-white focus:outline-none"
-                              aria-label="Copy API Key"
-                            >
-                              <FaCopy />
-                            </button>
-                          </div>
-                        ) : (
-                          'No API Key'
-                        )}
-                      </td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.total_calls}</td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                        {isNaN(new Date(client.created_at).getTime()) 
-                          ? 'Invalid Date' 
-                          : format(new Date(client.created_at), 'dd/MM/yyyy HH:mm')}
-                      </td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.revoked ? 'Yes' : 'No'}</td>
-                      <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                        <div className="flex flex-col gap-2 justify-center">
-                          {!client.revoked && (
-                            <button 
-                              onClick={() => setClientToRevoke(client)} 
-                              className="bg-yellow-500 text-white py-1 px-3 rounded hover:bg-yellow-600 transition duration-300"
-                            >
-                              Revoke
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => setClientToDelete(client)} 
-                            className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 transition duration-300"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Add User Button */}
-            <div className="w-full mt-8">
-              <button 
-                onClick={() => setShowForm(true)} 
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
-              >
-                Add New User
-              </button>
-            </div>
-          </>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
-        {/* Add User Modal */}
+        {/* Popup modal pour le formulaire d'ajout */}
         {showForm && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <div className="bg-table-bg p-6 rounded-lg shadow-lg w-full max-w-md">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Add New User</h2>
-                <button 
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
-              <form className="flex flex-col gap-4" onSubmit={handleAddUser}>
-                <div>
-                  <label htmlFor="name" className="block mb-2">Name</label>
-                  <input 
-                    id="name"
-                    type="text" 
-                    placeholder="Enter name" 
-                    className="w-full p-2 border rounded bg-background" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required 
-                  />
-                </div>
-                <div>
-                  <label htmlFor="email" className="block mb-2">Email</label>
-                  <input 
-                    id="email"
-                    type="email" 
-                    placeholder="Enter email" 
-                    className="w-full p-2 border rounded bg-background" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required 
-                  />
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-gradient-to-r from-blue-700 to-purple-700 p-6 rounded-lg w-96">
+              <h2 className="text-xl mb-4">Ajouter un Client</h2>
+              <form onSubmit={handleAddUser} className="flex flex-col gap-4  text-black">
+                <input 
+                  value={newName} 
+                  onChange={(e) => setNewName(e.target.value)} 
+                  placeholder="Nom" 
+                  className="p-2 border rounded"
+                />
+                <input 
+                  value={newEmail} 
+                  onChange={(e) => setNewEmail(e.target.value)} 
+                  placeholder="Email" 
+                  className="p-2 border rounded"
+                />
+                <input 
+                  value={newPhone} 
+                  onChange={(e) => setNewPhone(e.target.value)} 
+                  placeholder="Téléphone" 
+                  className="p-2 border rounded"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Ajouter</button>
                   <button 
                     type="button" 
-                    onClick={() => setShowForm(false)}
-                    className="bg-gray-300 text-black py-2 px-4 rounded hover:bg-gray-400 transition duration-300"
+                    onClick={() => setShowForm(false)} 
+                    className="bg-gray-300 text-black py-2 px-4 rounded"
                   >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-300"
-                  >
-                    Add User
+                    Annuler
                   </button>
                 </div>
               </form>
@@ -456,7 +288,6 @@ export default function DashboardAdmin() {
           </div>
         )}
 
-        {/* Confirmation Dialog */}
         {clientToDelete && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white p-6 rounded-lg">
@@ -480,31 +311,6 @@ export default function DashboardAdmin() {
           </div>
         )}
 
-        {/* Revocation Confirmation Dialog */}
-        {clientToRevoke && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg">
-              <h2 className="text-yellow-500 text-xl mb-4">Confirm Revocation</h2>
-              <p className='text-black'>Are you sure you want to revoke "{clientToRevoke.name}" active key ?</p>
-              <div className="mt-4 flex justify-end">
-                <button 
-                  onClick={cancelRevoke} 
-                  className="bg-gray-300 text-black py-2 px-4 rounded mr-2"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={confirmRevoke} 
-                  className="bg-yellow-500 text-white py-2 px-4 rounded"
-                >
-                  Revoke
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Toast Notification */}
         {toast && (
           <Toast 
             message={toast.message} 
