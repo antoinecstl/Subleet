@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -29,7 +30,7 @@ export default function Home() {
           <div className="border p-4 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
             <h2 className="mt-2 text-xl">Product 1</h2>
             <p className="text-gray-600 dark:text-gray-300">$19.99</p>
-            <button className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">Add to Cart</button>
+            <Link href="./hoodie" className="mt-2 px-4 py-2 bg-blue-500 text-white rounded">Add to Cart</Link>
           </div>
           <div className="border p-4 rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100">
             <h2 className="mt-2 text-xl">Product 2</h2>

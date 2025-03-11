@@ -14,45 +14,11 @@ export default function ChatBox() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Récupérer la clé API chiffrée au chargement du composant
   useEffect(() => {
-    const fetchApiKey = async () => {
-      try {
-        const response = await fetch('/api/fetch-active-api-key');
-        if (!response.ok) {
-          throw new Error('Failed to fetch API key');
-        }
-        const data = await response.json();
-        if (data && data.encryptedKey) {
-          setApiKey(data.encryptedKey);
-        }
-      } catch (error) {
-        console.error('Error fetching API key:', error);
-      }
-    };
-    
-    fetchApiKey();
-  }, []);
-
-  // Load messages from localStorage on component mount
-  useEffect(() => {
-    const storedMessages = localStorage.getItem('chatMessages');
-    if (storedMessages) {
-      setMessages(JSON.parse(storedMessages));
-    } else {
-      // Welcome message
-      const welcomeMessage: Message = {
-        id: Date.now().toString(),
-        content: "Bonjour ! Comment puis-je vous aider aujourd'hui ?",
-        sender: 'assistant',
-        timestamp: Date.now()
-      };
-      setMessages([welcomeMessage]);
-      localStorage.setItem('chatMessages', JSON.stringify([welcomeMessage]));
-    }
+    // Appeler clearChat directement au chargement du composant
+    clearChat();
   }, []);
 
   // Save messages to localStorage whenever they change
@@ -78,10 +44,6 @@ export default function ChatBox() {
   // Appeler l'Edge Function avec la requête de l'utilisateur
   const callOpenAIEdgeFunction = async (userQuery: string) => {
     try {
-      if (!apiKey) {
-        throw new Error("Clé API non disponible");
-      }
-
       const contextPrompt = "Contexte Général : Tu es un assistant virtuel destiné à répondre aux questions des clients sur un site marchand spécialisé dans la vente d'équipements de course à pied. Ta mission est de fournir des réponses précises et utiles basées uniquement sur les informations disponibles dans le contexte spécifique ci-dessous. Tu dois rester cordial, professionnel et éviter d'inventer des informations., optimise tes réponses pour qu'elle ne soit pas à rallonge";
       
       const response = await fetch("http://localhost:54321/functions/v1/openai", {
@@ -90,13 +52,12 @@ export default function ChatBox() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          encryptedKey: apiKey,
           query: `${contextPrompt}\n\nQuestion du client: ${userQuery}`
         })
       });
       
       if (!response.ok) {
-        throw new Error(`Erreur API: ${response.status}`);
+        throw new Error(`Erreur Edge: ${response.status}`);
       }
       
       // La réponse est directement le texte de la réponse
