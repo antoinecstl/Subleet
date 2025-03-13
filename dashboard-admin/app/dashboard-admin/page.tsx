@@ -6,6 +6,7 @@ import Fuse from 'fuse.js';
 import { format } from 'date-fns';
 import Toast from '../components/Toast';
 import { useRouter } from 'next/navigation';
+import { getCache, setCache } from '../../lib/cache-utils';
 
 // Update the Client interface to use project_count instead of project_list
 interface Client {
@@ -63,15 +64,29 @@ export default function DashboardAdmin() {
     }
   };
 
-  const fetchClients = async () => {
+  const fetchClients = async (bypassCache = false) => {
     try {
       setIsLoading(true);
+      
+      // Try to get from cache first, unless bypassing cache
+      if (!bypassCache) {
+        const cachedClients = getCache<Client[]>('cache_admin_clients');
+        if (cachedClients) {
+          setClients(cachedClients);
+          setIsLoading(false);
+          return;
+        }
+      }
+      
       const response = await fetch('/api/fetch-admin-dash');
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
       const result = await response.json();
       setClients(result);
+      
+      // Store in cache
+      setCache('cache_admin_clients', result);
     } catch (err) {
       if (err instanceof Error) {
         console.error(err.message);
@@ -152,6 +167,10 @@ export default function DashboardAdmin() {
     setClientToDelete(null);
   };
 
+  const handleRefresh = () => {
+    fetchClients(true);
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-8 pb-20 bg-background text-foreground">
       <main className="flex flex-col items-center sm:items-start mt-16 w-full">
@@ -207,7 +226,7 @@ export default function DashboardAdmin() {
                     <FaSync 
                       className="absolute top-1/2 right-2 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
                       size={16}
-                      onClick={fetchClients}
+                      onClick={handleRefresh} // Use the new handle refresh function
                       aria-label="Refresh data"
                     />
                   </th>
@@ -217,13 +236,12 @@ export default function DashboardAdmin() {
                 {sortedClients.map(client => (
                   <tr 
                     key={client.id} 
-                    className="cursor-pointer"
+                    className="cursor-pointer hover:bg-gray-700"
                     onClick={() => router.push(`/dashboard-admin/client/${client.id}`)}
                   >
                     <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.name}</td>
                     <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.email}</td>
                     <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.phone}</td>
-                    {/* Replace project_list with project_count */}
                     <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.project_count}</td>
                     <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
                       {isNaN(new Date(client.creation_date).getTime()) 

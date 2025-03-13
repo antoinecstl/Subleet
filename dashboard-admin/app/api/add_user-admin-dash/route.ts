@@ -18,10 +18,10 @@ export async function POST(request: Request) {
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .insert([{ 
-        name, 
-        email, 
+        name,
+        email,
         phone: phone || null,
-        project_list: project_list || null 
+        project_list: project_list || null
       }])
       .select()
       .single();

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
+import { getCache, setCache } from '@/lib/cache-utils';
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -18,8 +19,18 @@ export default function ClientDetail() {
   const [toastVisible, setToastVisible] = useState(false);
 
   useEffect(() => {
-    const fetchClientData = async () => {
+    const fetchClientData = async (bypassCache = false) => {
       try {
+        if (!bypassCache) {
+          const cachedClient = getCache<any>(`cache_client_${id}`);
+          if (cachedClient) {
+            setClient(cachedClient.client);
+            setProjects(cachedClient.projects);
+            setLoading(false);
+            return;
+          }
+        }
+
         const res = await fetch(`/api/fetch-user-details?client_id=${id}`);
         const data = await res.json();
         if (data.error) {
@@ -28,6 +39,9 @@ export default function ClientDetail() {
         } else {
           setClient(data.client);
           setProjects(data.projects);
+          
+          // Save to cache
+          setCache(`cache_client_${id}`, data);
         }
       } catch (error) {
         console.error(error);
@@ -35,6 +49,7 @@ export default function ClientDetail() {
         setLoading(false);
       }
     };
+    
     if (id) fetchClientData();
   }, [id]);
 
@@ -70,6 +85,9 @@ export default function ClientDetail() {
       setShowProjectForm(false);
       setNewProjectName('');
       setNewContext('');
+      
+      // Invalidate cache
+      localStorage.removeItem(`cache_client_${id}`);
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
     }
@@ -138,17 +156,25 @@ export default function ClientDetail() {
               <tr>
                 <th className="py-3 px-4 border-b border-table-border text-left">Project Name</th>
                 <th className="py-3 px-4 border-b border-table-border text-center">Context</th>
+                <th className="py-3 px-4 border-b border-table-border text-center">Total Calls</th>
+                <th className="py-3 px-4 border-b border-table-border text-center">Creation date</th>
                 <th className="py-3 px-4 border-b border-table-border text-center">Status</th>
               </tr>
             </thead>
             <tbody>
-              {projects.map(proj => (
-                <tr key={proj.project_id}>
-                  <td className="py-3 px-4 border-b border-table-border">{proj.project_name}</td>
-                  <td className="py-3 px-4 border-b border-table-border">{proj.context || 'N/A'}</td>
+              {projects.map(project => (
+                <tr 
+                  key={project.project_id} 
+                  className="cursor-pointer hover:bg-gray-700"
+                  onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
+                >
+                  <td className="py-3 px-4 border-b border-table-border text-left">{project.project_name}</td>
+                  <td className="py-3 px-4 border-b border-table-border text-center">{project.context || 'N/A'}</td>
+                  <td className="py-3 px-4 border-b border-table-border text-center">{project.total_call}</td>
+                  <td className="py-3 px-4 border-b border-table-border text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
                   <td className="py-3 px-4 border-b border-table-border text-center">
-                    <span className={`px-2 py-1 rounded ${proj.working ? 'bg-green-500' : 'bg-red-500'}`}>
-                      {proj.working ? 'Active' : 'Inactive'}
+                    <span className={`px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
+                      {project.working ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                 </tr>
