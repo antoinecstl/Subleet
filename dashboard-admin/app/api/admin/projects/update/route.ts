@@ -8,16 +8,26 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function PUT(request: Request) {
   try {
-    const { project_id, working } = await request.json();
+    const { project_id, working, context } = await request.json();
 
-    if (project_id === undefined || working === undefined) {
-      return NextResponse.json({ error: 'Project ID and working status are required' }, { status: 400 });
+    if (project_id === undefined) {
+      return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Update project status
+    // Check if neither working nor context is provided
+    if (working === undefined && context === undefined) {
+      return NextResponse.json({ error: 'Either working status or context must be provided' }, { status: 400 });
+    }
+
+    // Prepare update object based on what was provided
+    const updateData: { working?: boolean; context?: string } = {};
+    if (working !== undefined) updateData.working = working;
+    if (context !== undefined) updateData.context = context;
+
+    // Update project
     const { data: updatedProject, error: updateError } = await supabase
       .from('projects')
-      .update({ working })
+      .update(updateData)
       .eq('project_id', project_id)
       .select()
       .single();

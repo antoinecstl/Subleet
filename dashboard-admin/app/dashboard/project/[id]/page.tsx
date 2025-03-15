@@ -13,6 +13,9 @@ export default function ProjectDetail() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [isEditingContext, setIsEditingContext] = useState(false);
+  const [editedContext, setEditedContext] = useState('');
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const handleBack = () => {
     // Set flag that we're returning to dashboard via back navigation
@@ -66,6 +69,50 @@ export default function ProjectDetail() {
     }
   }, [toast]);
 
+  const startEditingContext = () => {
+    setEditedContext(project.context || '');
+    setIsEditingContext(true);
+  };
+
+  const cancelEditingContext = () => {
+    setIsEditingContext(false);
+    setEditedContext('');
+  };
+
+  const saveContextChanges = async () => {
+    if (!project || isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/public/projects/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          project_id: project.project_id, 
+          context: editedContext 
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update project context');
+      }
+      
+      const updatedProject = { ...project, context: editedContext };
+      setProject(updatedProject);
+      setToast({ message: 'Project context updated successfully', type: 'success' });
+      setIsEditingContext(false);
+      
+      // Update cache
+      setCache(`cache_project_${id}`, { project: updatedProject });
+      
+    } catch (err: any) {
+      setToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -110,8 +157,44 @@ export default function ProjectDetail() {
           </div>
           
           <div>
-            <p><span className="font-semibold text-gray-400">Context:</span></p>
-            <p className="mt-1 bg-gray-900 p-3 rounded-md text-sm">{project.context || 'No context provided'}</p>
+            <div className="flex justify-between items-center mb-1">
+              <span className="font-semibold text-gray-400">Context:</span>
+              {!isEditingContext ? (
+                <button 
+                  onClick={startEditingContext}
+                  className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white"
+                >
+                  Edit Context
+                </button>
+              ) : (
+                <div className="space-x-2">
+                  <button 
+                    onClick={saveContextChanges}
+                    disabled={isUpdating}
+                    className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-white"
+                  >
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                  <button 
+                    onClick={cancelEditingContext}
+                    className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-white"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {isEditingContext ? (
+              <textarea 
+                value={editedContext}
+                onChange={(e) => setEditedContext(e.target.value)}
+                className="w-full h-32 p-3 rounded-md bg-gray-900 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
+                placeholder="Enter context for this project..."
+              />
+            ) : (
+              <p className="mt-1 bg-gray-900 p-3 rounded-md text-sm">{project.context || 'No context provided'}</p>
+            )}
           </div>
         </div>
       </div>
