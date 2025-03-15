@@ -44,7 +44,7 @@ export default function DashboardAdmin() {
       return;
     }
     try {
-      const response = await fetch('/api/add_user-admin-dash', {
+      const response = await fetch('/api/admin/users/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newName, email: newEmail, phone: newPhone })
@@ -78,7 +78,7 @@ export default function DashboardAdmin() {
         }
       }
       
-      const response = await fetch('/api/fetch-admin-dash');
+      const response = await fetch('/api/admin/fetch/dashboard');
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -134,7 +134,7 @@ export default function DashboardAdmin() {
 
   const handleDelete = async (id: number): Promise<void> => {
     try {
-      const response = await fetch('/api/delete-admin-dash', {
+      const response = await fetch('/api/admin/users/delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

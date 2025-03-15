@@ -31,7 +31,7 @@ export default function ClientDetail() {
           }
         }
 
-        const res = await fetch(`/api/fetch-user-details?client_id=${id}`);
+        const res = await fetch(`/api/admin/fetch/user?client_id=${id}`);
         const data = await res.json();
         if (data.error) {
           setToast({ message: data.error, type: 'error' });
@@ -71,7 +71,7 @@ export default function ClientDetail() {
       return;
     }
     try {
-      const response = await fetch('/api/add-project', {
+      const response = await fetch('/api/admin/projects/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_name: newProjectName, project_owner: client.id, context: newContext })

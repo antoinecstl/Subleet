@@ -29,7 +29,7 @@ export default function AdminProjectDetail() {
           }
         }
         
-        const res = await fetch(`/api/admin/fetch-project-details?project_id=${id}`);
+        const res = await fetch(`/api/admin/fetch/project?project_id=${id}`);
         const data = await res.json();
         
         if (data.error) {
@@ -69,7 +69,7 @@ export default function AdminProjectDetail() {
     
     setIsUpdating(true);
     try {
-      const response = await fetch('/api/admin/update-project', {
+      const response = await fetch('/api/admin/projects/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

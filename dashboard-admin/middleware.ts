@@ -5,12 +5,24 @@ const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/'])
 
 const isAdminRoute = createRouteMatcher(['/dashboard-admin(.*)'])
 
+interface SessionClaims {
+  metadata?: {
+    role?: string;
+  };
+}
+
 export default clerkMiddleware(async (auth, request) => {
-    const sessionClaims = (await auth()).sessionClaims as { metadata?: { role?: string } };
-    if (isAdminRoute(request) && sessionClaims.metadata?.role !== 'admin') {
-        const url = new URL('/', request.url)
-        return NextResponse.redirect(url)
-    }  
+    const authObject = await auth() as { userId?: string; sessionClaims?: SessionClaims };
+    
+    // Handle admin route access
+    if (isAdminRoute(request)) {
+        if (!authObject.userId || authObject.sessionClaims?.metadata?.role !== 'admin') {
+            const url = new URL('/', request.url)
+            return NextResponse.redirect(url)
+        }
+    }
+    
+    // Protect non-public routes
     if (!isPublicRoute(request)) {
         await auth.protect()
     }

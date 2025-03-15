@@ -32,7 +32,7 @@ export default function ProjectDetail() {
           }
         }
         
-        const res = await fetch(`/api/fetch-project-details?project_id=${id}`);
+        const res = await fetch(`/api/public/fetch/project?project_id=${id}`);
         const data = await res.json();
         
         if (data.error) {

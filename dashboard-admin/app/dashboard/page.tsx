@@ -142,7 +142,7 @@ export default function Dashboard() {
         }
       }
       
-      const response = await fetch('/api/fetch-user-dash');
+      const response = await fetch('/api/public/fetch/dashboard');
       
       if (response.status === 429) {
         setToast({ 
