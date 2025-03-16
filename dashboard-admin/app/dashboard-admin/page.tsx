@@ -53,8 +53,21 @@ export default function DashboardAdmin() {
       if (!response.ok) {
         throw new Error(data.error || "Échec de l'ajout");
       }
+      
+      // Ensure the new client has a project_count of 0 if not set by the API
+      const newClient = {
+        ...data.client,
+        project_count: data.client.project_count || 0
+      };
+      
+      // Update local state
+      const updatedClients = [...clients, newClient];
+      setClients(updatedClients);
+      
+      // Update cache with the new client list
+      setCache('cache_admin_clients', updatedClients);
+      
       setToast({ message: data.message, type: 'success' });
-      setClients(prev => [...prev, data.client]); // Ajoute le nouvel utilisateur à la liste
       setShowForm(false);
       setNewName('');
       setNewEmail('');
@@ -146,12 +159,24 @@ export default function DashboardAdmin() {
         throw new Error(`Error: ${response.status}`);
       }
 
-      setClients(clients.filter(client => client.id !== id));
+      // Update local state
+      const updatedClients = clients.filter(client => client.id !== id);
+      setClients(updatedClients);
+      
+      // Update cache with the new client list
+      setCache('cache_admin_clients', updatedClients);
+      
+      // Also clear any related client caches
+      localStorage.removeItem(`cache_client_${id}`);
+      
+      setToast({ message: 'Client deleted successfully', type: 'success' });
     } catch (err) {
       if (err instanceof Error) {
         console.error(err.message);
+        setToast({ message: err.message, type: 'error' });
       } else {
         console.error(err);
+        setToast({ message: 'An error occurred while deleting the client', type: 'error' });
       }
     }
   };

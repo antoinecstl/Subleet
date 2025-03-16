@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
+import { FaSync } from 'react-icons/fa';
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -17,39 +18,46 @@ export default function ClientDetail() {
   const [newContext, setNewContext] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<any>(null);
+
+  const fetchClientData = async (bypassCache = false) => {
+    try {
+      setLoading(true);
+      if (!bypassCache) {
+        const cachedClient = getCache<any>(`cache_client_${id}`);
+        if (cachedClient) {
+          setClient(cachedClient.client);
+          setProjects(cachedClient.projects);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const res = await fetch(`/api/admin/fetch/user?client_id=${id}`);
+      const data = await res.json();
+      if (data.error) {
+        setToast({ message: data.error, type: 'error' });
+        setClient(null);
+      } else {
+        setClient(data.client);
+        setProjects(data.projects);
+        
+        // Save to cache
+        setCache(`cache_client_${id}`, data);
+      }
+    } catch (error) {
+      console.error(error);
+      setToast({ message: 'Failed to fetch client data', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleRefresh = () => {
+    fetchClientData(true);
+  };
 
   useEffect(() => {
-    const fetchClientData = async (bypassCache = false) => {
-      try {
-        if (!bypassCache) {
-          const cachedClient = getCache<any>(`cache_client_${id}`);
-          if (cachedClient) {
-            setClient(cachedClient.client);
-            setProjects(cachedClient.projects);
-            setLoading(false);
-            return;
-          }
-        }
-
-        const res = await fetch(`/api/fetch-user-details?client_id=${id}`);
-        const data = await res.json();
-        if (data.error) {
-          setToast({ message: data.error, type: 'error' });
-          setClient(null);
-        } else {
-          setClient(data.client);
-          setProjects(data.projects);
-          
-          // Save to cache
-          setCache(`cache_client_${id}`, data);
-        }
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     if (id) fetchClientData();
   }, [id]);
 
@@ -71,7 +79,7 @@ export default function ClientDetail() {
       return;
     }
     try {
-      const response = await fetch('/api/add-project', {
+      const response = await fetch('/api/admin/projects/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_name: newProjectName, project_owner: client.id, context: newContext })
@@ -80,17 +88,98 @@ export default function ClientDetail() {
       if (!response.ok) {
         throw new Error(data.error || 'Failed to add project');
       }
+
+      // Ensure the new project has default values if not provided by API
+      const newProject = {
+        ...data.project,
+        total_call: data.project.total_call || 0,
+        working: data.project.working !== undefined ? data.project.working : true,
+        context: data.project.context || newContext || '',
+        creation_timestamp: data.project.creation_timestamp || Date.now()
+      };
+      
+      // Update projects state with new project
+      const updatedProjects = [...projects, newProject];
+      setProjects(updatedProjects);
+      
+      // Update client object to increment project count if available
+      const updatedClient = client.project_count !== undefined
+        ? { ...client, project_count: (client.project_count || 0) + 1 }
+        : client;
+      setClient(updatedClient);
+      
+      // Update cache with new data instead of just invalidating
+      setCache(`cache_client_${id}`, {
+        client: updatedClient,
+        projects: updatedProjects
+      });
+      
+      // Also invalidate the admin dashboard cache to ensure project counts are updated
+      localStorage.removeItem('cache_admin_clients');
+      
       setToast({ message: data.message, type: 'success' });
-      setProjects(prev => [...prev, data.project]);
       setShowProjectForm(false);
       setNewProjectName('');
       setNewContext('');
-      
-      // Invalidate cache
-      localStorage.removeItem(`cache_client_${id}`);
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
     }
+  };
+
+  const handleDeleteProject = async (projectId: number): Promise<void> => {
+    try {
+      const response = await fetch('/api/admin/projects/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: projectId }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      // Update local state
+      const updatedProjects = projects.filter(project => project.project_id !== projectId);
+      setProjects(updatedProjects);
+      
+      // Update client object to decrement project count if available
+      const updatedClient = client.project_count !== undefined
+        ? { ...client, project_count: Math.max(0, (client.project_count || 0) - 1) }
+        : client;
+      setClient(updatedClient);
+      
+      // Update cache with new data
+      setCache(`cache_client_${id}`, {
+        client: updatedClient,
+        projects: updatedProjects
+      });
+      
+      // Also invalidate the admin dashboard cache to ensure project counts are updated
+      localStorage.removeItem('cache_admin_clients');
+      
+      setToast({ message: 'Project deleted successfully', type: 'success' });
+    } catch (err) {
+      if (err instanceof Error) {
+        console.error(err.message);
+        setToast({ message: err.message, type: 'error' });
+      } else {
+        console.error(err);
+        setToast({ message: 'An error occurred while deleting the project', type: 'error' });
+      }
+    }
+  };
+
+  const confirmDeleteProject = () => {
+    if (projectToDelete) {
+      handleDeleteProject(projectToDelete.project_id);
+      setProjectToDelete(null);
+    }
+  };
+
+  const cancelDeleteProject = () => {
+    setProjectToDelete(null);
   };
 
   const truncateText = (text: string | null | undefined, maxLength: number = 40): string => {
@@ -121,7 +210,9 @@ export default function ClientDetail() {
     <div className="min-h-screen p-6 bg-background text-foreground">
       <button onClick={() => router.back()} className="mb-4 px-2 py-1 rounded-lg bg-gradient-to-r from-blue-700 to-purple-700 hover:underline">&larr; Back</button>
       <div className="mb-8 p-6 bg-table-bg border border-table-border rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-4">Client Details</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold">Client Details</h2>
+        </div>
         {client ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -164,6 +255,14 @@ export default function ClientDetail() {
                 <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
                 <th className="py-4 px-6 text-center font-semibold">Creation date</th>
                 <th className="py-4 px-6 text-center font-semibold">Status</th>
+                <th className="py-4 px-6 text-center font-semibold relative">Actions
+                <FaSync 
+                    className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
+                    size={16}
+                    onClick={handleRefresh}
+                    aria-label="Refresh data"
+                  />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -183,6 +282,18 @@ export default function ClientDetail() {
                     <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500' : 'bg-red-500/20 text-red-400 border border-red-500'}`}>
                       {project.working ? 'Active' : 'Inactive'}
                     </span>
+                  </td>
+                  <td className="py-4 px-6 text-center">
+                    {/* Delete button stops propagation */}
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        setProjectToDelete(project);
+                      }} 
+                      className="bg-red-500 text-white py-1.5 px-4 rounded-full hover:bg-red-600 transition duration-300"
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -220,6 +331,29 @@ export default function ClientDetail() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {projectToDelete && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-6 rounded-lg">
+            <h2 className="text-red-500 text-xl mb-4">Confirm Deletion</h2>
+            <p className='text-black'>Are you sure you want to delete project "{projectToDelete.project_name}"?</p>
+            <div className="mt-4 flex justify-end">
+              <button 
+                onClick={cancelDeleteProject} 
+                className="bg-gray-300 text-black py-2 px-4 rounded mr-2"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDeleteProject} 
+                className="bg-red-500 text-white py-2 px-4 rounded"
+              >
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -18,8 +18,6 @@ export default function ProjectDetail() {
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleBack = () => {
-    // Set flag that we're returning to dashboard via back navigation
-    sessionStorage.setItem('returning_to_dashboard', 'true');
     router.back();
   };
 
@@ -103,8 +101,15 @@ export default function ProjectDetail() {
       setToast({ message: 'Project context updated successfully', type: 'success' });
       setIsEditingContext(false);
       
-      // Update cache
+      // Update project-specific cache
       setCache(`cache_project_${id}`, { project: updatedProject });
+      
+      // Invalidate ALL relevant caches to ensure dashboard updates
+      localStorage.removeItem(`cache_client_${project.project_owner}`);
+      localStorage.removeItem(`cache_project_${id}`);
+      
+      // Critical fix: also remove the dashboard central cache that the dashboard page uses
+      localStorage.removeItem('cache_user_dashboard');
       
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
@@ -124,7 +129,12 @@ export default function ProjectDetail() {
   if (!project) {
     return (
       <div className="min-h-screen p-6 bg-background text-foreground">
-        <button onClick={() => router.back()} className="mb-4 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700">&larr; Back</button>
+        <button 
+        onClick={() => router.back()} 
+        className="mb-4 px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+        >
+          &larr; Back
+        </button>
         <p className="text-center text-red-500">Project not found or you don't have permission to view it.</p>
       </div>
     );

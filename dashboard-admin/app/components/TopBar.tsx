@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export default function TopBar() {
   const pathname = usePathname();
-  const isDashboardAdminPage = pathname === "/dashboard-admin";
+  const isDashboardAdminPage = pathname.startsWith("/dashboard-admin");
   const isSignInPage = pathname === "/sign-in";
 
   return (
