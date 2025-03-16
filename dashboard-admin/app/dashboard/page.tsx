@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import Toast from '../components/Toast';
 import { useRouter } from 'next/navigation';
 import { getCache, setCache } from '../../lib/cache-utils';
+import { FaSync } from 'react-icons/fa';
 
 interface Project {
   project_id: number;
@@ -24,9 +25,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRateLimited, setIsRateLimited] = useState(false);
   const lastFetchRef = useRef<number>(0);
-  const RATE_LIMIT_DELAY = 10000; 
   const isFirstMount = useRef(true);
 
   const loadCachedData = () => {
@@ -64,8 +63,7 @@ export default function Dashboard() {
       const hasCachedData = loadCachedData();
       
       if (isReturningNavigation) {
-        // If we're returning via back navigation, prioritize cache and reset rate limit
-        lastFetchRef.current = 0;
+        // If we're returning via back navigation, prioritize cache
         if (hasCachedData) {
           setIsLoading(false);
           // Only refetch after a delay if we have cached data and are returning
@@ -105,31 +103,9 @@ export default function Dashboard() {
     }
   }, [toast]);
 
-  const canFetch = (isReturningNavigation = false) => {
-    const now = Date.now();
-    // Skip rate limiting on return navigation
-    if (isReturningNavigation) return true;
-    
-    if (now - lastFetchRef.current >= RATE_LIMIT_DELAY) {
-      lastFetchRef.current = now;
-      return true;
-    }
-    return false;
-  };
-
   const fetchUserData = async (bypassCache = false, isReturningNavigation = false) => {
-    if (!canFetch(isReturningNavigation) && !bypassCache) {
-      setIsRateLimited(true);
-      setToast({ 
-        message: 'Please wait a few seconds before refreshing again', 
-        type: 'error' 
-      });
-      return;
-    }
-
     try {
       setIsLoading(true);
-      setIsRateLimited(false);
       
       // Try to get from cache first if not bypassing
       if (!bypassCache) {
@@ -144,14 +120,6 @@ export default function Dashboard() {
       
       const response = await fetch('/api/public/fetch/dashboard');
       
-      if (response.status === 429) {
-        setToast({ 
-          message: 'Too many requests. Please wait a moment.', 
-          type: 'error' 
-        });
-        return;
-      }
-
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -180,6 +148,15 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchUserData(true);
+  };
+
+  const truncateText = (text: string | null | undefined, maxLength: number = 40): string => {
+    if (!text) return 'N/A';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
   return (
@@ -217,38 +194,50 @@ export default function Dashboard() {
                 <p className="mt-2 text-sm text-gray-500">Please contact the administrator for assistance.</p>
               </div>
             ) : (
-              <div className="w-full overflow-x-auto">
+              <div className="w-full">
                 <h1 className="text-3xl font-bold mb-8">Your Projects</h1>
-                <table className="min-w-full bg-table-bg border border-table-border shadow-lg rounded-lg">
-                  <thead className="bg-table-bg">
-                    <tr>
-                      <th className="py-3 px-4 border-b border-table-border text-left">Project Name</th>
-                      <th className="py-3 px-4 border-b border-table-border text-center">Context</th>
-                      <th className="py-3 px-4 border-b border-table-border text-center">Total Calls</th>
-                      <th className="py-3 px-4 border-b border-table-border text-center">Creation date</th>
-                      <th className="py-3 px-4 border-b border-table-border text-center">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {projects.map((project) => (
-                      <tr 
-                        key={project.project_id} 
-                        className="cursor-pointer hover:bg-gray-700"
-                        onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
-                      >
-                        <td className="py-3 px-4 border-b border-table-border text-left">{project.project_name}</td>
-                        <td className="py-3 px-4 border-b border-table-border text-center">{project.context || 'N/A'}</td>
-                        <td className="py-3 px-4 border-b border-table-border text-center">{project.total_call}</td>
-                        <td className="py-3 px-4 border-b border-table-border text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
-                        <td className="py-3 px-4 border-b border-table-border text-center">
-                          <span className={`px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
-                            {project.working ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
+                <div className="overflow-hidden rounded-xl shadow-2xl border border-table-border">
+                  <table className="min-w-full bg-table-bg">
+                    <thead className="bg-gradient-to-r from-blue-900 to-purple-900">
+                      <tr>
+                        <th className="py-4 px-6 text-left font-semibold">Project Name</th>
+                        <th className="py-4 px-6 text-center font-semibold">Context</th>
+                        <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
+                        <th className="py-4 px-6 text-center font-semibold">Creation date</th>
+                        <th className="py-4 px-6 text-center font-semibold relative">
+                          Status
+                          <FaSync 
+                            className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
+                            size={16}
+                            onClick={handleRefresh}
+                            aria-label="Refresh data"
+                          />
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {projects.map((project, index) => (
+                        <tr 
+                          key={project.project_id} 
+                          className={`cursor-pointer transition-colors duration-150 hover:bg-gray-700 ${index !== projects.length-1 ? 'border-b border-table-border' : ''}`}
+                          onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
+                        >
+                          <td className="py-4 px-6 text-left">{project.project_name}</td>
+                          <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
+                            {truncateText(project.context)}
+                          </td>
+                          <td className="py-4 px-6 text-center">{project.total_call}</td>
+                          <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
+                          <td className="py-4 px-6 text-center">
+                            <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500' : 'bg-red-500/20 text-red-400 border border-red-500'}`}>
+                              {project.working ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>

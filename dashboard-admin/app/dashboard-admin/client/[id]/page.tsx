@@ -31,7 +31,7 @@ export default function ClientDetail() {
           }
         }
 
-        const res = await fetch(`/api/admin/fetch/user?client_id=${id}`);
+        const res = await fetch(`/api/fetch-user-details?client_id=${id}`);
         const data = await res.json();
         if (data.error) {
           setToast({ message: data.error, type: 'error' });
@@ -71,7 +71,7 @@ export default function ClientDetail() {
       return;
     }
     try {
-      const response = await fetch('/api/admin/projects/add', {
+      const response = await fetch('/api/add-project', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_name: newProjectName, project_owner: client.id, context: newContext })
@@ -91,6 +91,11 @@ export default function ClientDetail() {
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
     }
+  };
+
+  const truncateText = (text: string | null | undefined, maxLength: number = 40): string => {
+    if (!text) return 'N/A';
+    return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text;
   };
 
   if (loading) {
@@ -150,30 +155,32 @@ export default function ClientDetail() {
           <p className="text-lg text-gray-400">No projects found for this client.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-table-bg border border-table-border shadow-lg rounded-lg">
-            <thead className="bg-table-bg">
+        <div className="overflow-hidden rounded-xl shadow-2xl border border-table-border">
+          <table className="min-w-full bg-table-bg">
+            <thead className="bg-gradient-to-r from-blue-900 to-purple-900">
               <tr>
-                <th className="py-3 px-4 border-b border-table-border text-left">Project Name</th>
-                <th className="py-3 px-4 border-b border-table-border text-center">Context</th>
-                <th className="py-3 px-4 border-b border-table-border text-center">Total Calls</th>
-                <th className="py-3 px-4 border-b border-table-border text-center">Creation date</th>
-                <th className="py-3 px-4 border-b border-table-border text-center">Status</th>
+                <th className="py-4 px-6 text-left font-semibold">Project Name</th>
+                <th className="py-4 px-6 text-center font-semibold">Context</th>
+                <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
+                <th className="py-4 px-6 text-center font-semibold">Creation date</th>
+                <th className="py-4 px-6 text-center font-semibold">Status</th>
               </tr>
             </thead>
             <tbody>
-              {projects.map(project => (
+              {projects.map((project, index) => (
                 <tr 
                   key={project.project_id} 
-                  className="cursor-pointer hover:bg-gray-700"
+                  className={`cursor-pointer transition-colors duration-150 hover:bg-gray-700 ${index !== projects.length-1 ? 'border-b border-table-border' : ''}`}
                   onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
                 >
-                  <td className="py-3 px-4 border-b border-table-border text-left">{project.project_name}</td>
-                  <td className="py-3 px-4 border-b border-table-border text-center">{project.context || 'N/A'}</td>
-                  <td className="py-3 px-4 border-b border-table-border text-center">{project.total_call}</td>
-                  <td className="py-3 px-4 border-b border-table-border text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
-                  <td className="py-3 px-4 border-b border-table-border text-center">
-                    <span className={`px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
+                  <td className="py-4 px-6 text-left">{project.project_name}</td>
+                  <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
+                    {truncateText(project.context)}
+                  </td>
+                  <td className="py-4 px-6 text-center">{project.total_call}</td>
+                  <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
+                  <td className="py-4 px-6 text-center">
+                    <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500' : 'bg-red-500/20 text-red-400 border border-red-500'}`}>
                       {project.working ? 'Active' : 'Inactive'}
                     </span>
                   </td>

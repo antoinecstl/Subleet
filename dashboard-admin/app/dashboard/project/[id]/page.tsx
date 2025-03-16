@@ -140,12 +140,13 @@ export default function ProjectDetail() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div>
-            <p><span className="font-semibold text-gray-400">Status:</span> 
+            <p>
+              <span className="font-semibold text-gray-400">Status:</span> 
               <span className={`ml-2 px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
                 {project.working ? 'Active' : 'Inactive'}
               </span>
             </p>
-            <p className="mt-2"><span className="font-semibold text-gray-400">Total API Calls:</span> {project.total_call}</p>
+            <p className="mt-2"><span className="font-semibold text-gray-400">Total Calls:</span> {project.total_call}</p>
 
             {project.creation_timestamp && (
               <p className="mt-2">

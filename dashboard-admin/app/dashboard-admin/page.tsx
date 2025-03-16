@@ -199,71 +199,73 @@ export default function DashboardAdmin() {
             <p className="mt-4 text-gray-400">Loading client data...</p>
           </div>
         ) : (
-          <div className="overflow-x-auto w-full mt-8 relative">
-            <table className="min-w-full bg-table-bg rounded-lg border border-separate ">
-              <thead className="bg-table-bg">
-                <tr>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Name</th>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Email</th>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Phone</th>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">Projects</th>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                    <div className="flex items-center justify-center">
-                      <span>Created At</span>
-                      <button 
-                        onClick={() => {
-                          setSortKey('creation_date');
-                          setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                        }}
-                        className="ml-2 inline-flex items-center"
-                      >
-                        {sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />}
-                      </button>
-                    </div>
-                  </th>
-                  <th className="py-2 px-4 border-b border-table-border text-center text-table-text relative">
-                    Actions
-                    <FaSync 
-                      className="absolute top-1/2 right-2 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
-                      size={16}
-                      onClick={handleRefresh} // Use the new handle refresh function
-                      aria-label="Refresh data"
-                    />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedClients.map(client => (
-                  <tr 
-                    key={client.id} 
-                    className="cursor-pointer hover:bg-gray-700"
-                    onClick={() => router.push(`/dashboard-admin/client/${client.id}`)}
-                  >
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.name}</td>
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.email}</td>
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.phone}</td>
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">{client.project_count}</td>
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                      {isNaN(new Date(client.creation_date).getTime()) 
-                        ? 'Invalid Date' 
-                        : format(new Date(client.creation_date), 'dd/MM/yyyy HH:mm')}
-                    </td>
-                    <td className="py-2 px-4 border-b border-table-border text-center text-table-text">
-                      {/* Delete button stops propagation */}
-                      <button 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          setClientToDelete(client);
-                        }} 
-                        className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600 transition duration-300"
-                      >
-                        Delete
-                      </button>
-                    </td>
+          <div className="w-full mt-8">
+            <div className="overflow-hidden rounded-xl shadow-2xl border border-table-border">
+              <table className="min-w-full bg-table-bg">
+                <thead className="bg-gradient-to-r from-blue-900 to-purple-900">
+                  <tr>
+                    <th className="py-4 px-6 text-left font-semibold">Name</th>
+                    <th className="py-4 px-6 text-center font-semibold">Email</th>
+                    <th className="py-4 px-6 text-center font-semibold">Phone</th>
+                    <th className="py-4 px-6 text-center font-semibold">Projects</th>
+                    <th className="py-4 px-6 text-center font-semibold">
+                      <div className="flex items-center justify-center">
+                        <span>Created At</span>
+                        <button 
+                          onClick={() => {
+                            setSortKey('creation_date');
+                            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                          }}
+                          className="ml-2 inline-flex items-center"
+                        >
+                          {sortOrder === 'asc' ? <FaSortUp /> : <FaSortDown />}
+                        </button>
+                      </div>
+                    </th>
+                    <th className="py-4 px-6 text-center font-semibold relative">
+                      Actions
+                      <FaSync 
+                        className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
+                        size={16}
+                        onClick={handleRefresh}
+                        aria-label="Refresh data"
+                      />
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sortedClients.map((client, index) => (
+                    <tr 
+                      key={client.id} 
+                      className={`cursor-pointer transition-colors duration-150 hover:bg-gray-700 ${index !== sortedClients.length-1 ? 'border-b border-table-border' : ''}`}
+                      onClick={() => router.push(`/dashboard-admin/client/${client.id}`)}
+                    >
+                      <td className="py-4 px-6 text-left">{client.name}</td>
+                      <td className="py-4 px-6 text-center">{client.email}</td>
+                      <td className="py-4 px-6 text-center">{client.phone}</td>
+                      <td className="py-4 px-6 text-center">{client.project_count}</td>
+                      <td className="py-4 px-6 text-center">
+                        {isNaN(new Date(client.creation_date).getTime()) 
+                          ? 'Invalid Date' 
+                          : format(new Date(client.creation_date), 'dd/MM/yyyy HH:mm')}
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        {/* Delete button stops propagation */}
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setClientToDelete(client);
+                          }} 
+                          className="bg-red-500 text-white py-1.5 px-4 rounded-full hover:bg-red-600 transition duration-300"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

@@ -3,42 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { currentUser } from '@clerk/nextjs/server';
 import { auth } from '@clerk/nextjs/server';
 import dotenv from 'dotenv';
-import { headers } from 'next/headers';
 
 dotenv.config();
 
 const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_ANON_KEY!);
 
-// Rate limiting map
-const rateLimit = new Map<string, number>();
-const RATE_LIMIT_DURATION = 10000; 
-
 export async function GET() {
-  const headersList = await headers();
-  const ip = headersList.get('x-forwarded-for') || 'unknown';
-  const now = Date.now();
-  const lastRequest = rateLimit.get(ip);
-
-  // Check rate limiting
-  if (lastRequest && now - lastRequest < RATE_LIMIT_DURATION) {
-    return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': '10' } }
-    );
-  }
-
-  // Update last request timestamp
-  rateLimit.set(ip, now);
-
-  // Clean old entries every 5 minutes
-  if (now % 300000 < RATE_LIMIT_DURATION) {
-    for (const [key, timestamp] of rateLimit.entries()) {
-      if (now - timestamp > 300000) {
-        rateLimit.delete(key);
-      }
-    }
-  }
-
   try {
     const { userId } = await auth();
     if (!userId) {
