@@ -207,168 +207,188 @@ export default function ClientDetail() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-background text-foreground">
-      <button onClick={() => router.back()} className="mb-4 px-2 py-1 rounded-lg bg-gradient-to-r from-blue-700 to-purple-700 hover:underline">&larr; Back</button>
-      <div className="mb-8 p-6 bg-table-bg border border-table-border rounded-lg shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">Client Details</h2>
+    <div className="min-h-screen p-6 bg-background text-foreground relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-500 opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-purple-600 opacity-5 blur-3xl"></div>
+      
+      <div className="relative z-10 max-w-7xl mx-auto">
+        <button 
+          onClick={() => router.back()} 
+          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+        >
+          &larr; <span>Back</span>
+        </button>
+        
+        <div className="mb-8 p-8 glass-card rounded-xl shadow-lg border border-white/10 hover-scale">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Client Details</h2>
+          </div>
+          {client ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <p><span className="font-semibold text-white/70">Name:</span> {client.name}</p>
+                <p><span className="font-semibold text-white/70">Email:</span> {client.email}</p>
+              </div>
+              <div className="space-y-3">
+                <p><span className="font-semibold text-white/70">Phone:</span> {client.phone || 'N/A'}</p>
+                <p>
+                  <span className="font-semibold text-white/70">Created:</span> {client.creation_date 
+                    ? format(new Date(client.creation_date), 'dd/MM/yyyy')
+                    : 'N/A'}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <p>Client not found.</p>
+          )}
         </div>
-        {client ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <p><span className="font-semibold">Name:</span> {client.name}</p>
-              <p><span className="font-semibold">Email:</span> {client.email}</p>
-            </div>
-            <div>
-              <p><span className="font-semibold">Phone:</span> {client.phone || 'N/A'}</p>
-              <p>
-                <span className="font-semibold">Created:</span> {client.creation_date 
-                  ? format(new Date(client.creation_date), 'dd/MM/yyyy')
-                  : 'N/A'}
-              </p>
-            </div>
+        
+        <div className="mb-6 flex justify-between items-center">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Projects</h1>
+          <button 
+            onClick={() => setShowProjectForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2.5 px-6 rounded-full shadow-lg hover:shadow-blue-500/20 transition duration-300 transform hover:scale-105"
+          >
+            Add Project
+          </button>
+        </div>
+        
+        {projects.length === 0 ? (
+          <div className="text-center p-12 glass-card rounded-xl border border-white/10 shadow-lg">
+            <p className="text-xl text-white/70">No projects found for this client.</p>
           </div>
         ) : (
-          <p>Client not found.</p>
-        )}
-      </div>
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Projects</h1>
-        <button 
-          onClick={() => setShowProjectForm(true)}
-          className="bg-gradient-to-r from-blue-700 to-purple-700 hover:underline text-white py-2 px-4 rounded"
-        >
-          Add Project
-        </button>
-      </div>
-      {projects.length === 0 ? (
-        <div className="text-center p-8 bg-table-bg border border-table-border rounded-lg shadow-lg">
-          <p className="text-lg text-gray-400">No projects found for this client.</p>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-xl shadow-2xl border border-table-border">
-          <table className="min-w-full bg-table-bg">
-            <thead className="bg-gradient-to-r from-blue-900 to-purple-900">
-              <tr>
-                <th className="py-4 px-6 text-left font-semibold">Project Name</th>
-                <th className="py-4 px-6 text-center font-semibold">Context</th>
-                <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
-                <th className="py-4 px-6 text-center font-semibold">Creation date</th>
-                <th className="py-4 px-6 text-center font-semibold">Status</th>
-                <th className="py-4 px-6 text-center font-semibold relative">Actions
-                <FaSync 
-                    className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
-                    size={16}
-                    onClick={handleRefresh}
-                    aria-label="Refresh data"
-                  />
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {projects.map((project, index) => (
-                <tr 
-                  key={project.project_id} 
-                  className={`cursor-pointer transition-colors duration-150 hover:bg-gray-700 ${index !== projects.length-1 ? 'border-b border-table-border' : ''}`}
-                  onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
-                >
-                  <td className="py-4 px-6 text-left">{project.project_name}</td>
-                  <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
-                    {truncateText(project.context)}
-                  </td>
-                  <td className="py-4 px-6 text-center">{project.total_call}</td>
-                  <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
-                  <td className="py-4 px-6 text-center">
-                    <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500' : 'bg-red-500/20 text-red-400 border border-red-500'}`}>
-                      {project.working ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="py-4 px-6 text-center">
-                    {/* Delete button stops propagation */}
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        setProjectToDelete(project);
-                      }} 
-                      className="bg-red-500 text-white py-1.5 px-4 rounded-full hover:bg-red-600 transition duration-300"
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <div className="overflow-hidden rounded-xl shadow-2xl glass-card border border-white/10">
+            <table className="min-w-full">
+              <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
+                <tr>
+                  <th className="py-4 px-6 text-left font-semibold">Project Name</th>
+                  <th className="py-4 px-6 text-center font-semibold">Context</th>
+                  <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
+                  <th className="py-4 px-6 text-center font-semibold">Creation date</th>
+                  <th className="py-4 px-6 text-center font-semibold">Status</th>
+                  <th className="py-4 px-6 text-center font-semibold relative">
+                    Actions
+                    <FaSync 
+                      className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
+                      size={16}
+                      onClick={handleRefresh}
+                      aria-label="Refresh data"
+                    />
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              </thead>
+              <tbody>
+                {projects.map((project, index) => (
+                  <tr 
+                    key={project.project_id} 
+                    className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
+                    onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
+                  >
+                    <td className="py-4 px-6 text-left">{project.project_name}</td>
+                    <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
+                      {truncateText(project.context)}
+                    </td>
+                    <td className="py-4 px-6 text-center">{project.total_call}</td>
+                    <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
+                    <td className="py-4 px-6 text-center">
+                      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
+                        {project.working ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 text-center">
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          setProjectToDelete(project);
+                        }} 
+                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-1.5 px-4 rounded-full transition duration-300 transform hover:scale-105 shadow-md"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-      {/* Popup modal for Add Project */}
-      {showProjectForm && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-gradient-to-r from-blue-700 to-purple-700 p-6 rounded-lg w-96">
-            <h2 className="text-xl mb-4">Add Project</h2>
-            <form onSubmit={handleAddProject} className="text-black flex flex-col gap-4">
-              <input 
-                value={newProjectName}
-                onChange={(e) => setNewProjectName(e.target.value)}
-                placeholder="Project Name"
-                className="p-2 border rounded-lg"
-              />
-              <textarea
-                value={newContext}
-                onChange={(e) => setNewContext(e.target.value)}
-                placeholder="Context (optional)"
-                className="p-2 border rounded-lg"
-              />
-              <div className="flex gap-2 justify-end">
-                <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded">Add</button>
+        {/* Popup modal for Add Project */}
+        {showProjectForm && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+            <div className="glass-card p-8 rounded-2xl w-96 border border-white/20 animate-fadeIn">
+              <h2 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Add New Project</h2>
+              <form onSubmit={handleAddProject} className="flex flex-col gap-4">
+                <input 
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  placeholder="Project Name"
+                  className="p-3 rounded-lg bg-white/10 border border-white/10 focus:border-blue-500 focus:outline-none text-white"
+                />
+                <textarea
+                  value={newContext}
+                  onChange={(e) => setNewContext(e.target.value)}
+                  placeholder="Context (optional)"
+                  className="p-3 rounded-lg bg-white/10 border border-white/10 focus:border-blue-500 focus:outline-none text-white h-32 resize-none"
+                />
+                <div className="flex gap-3 justify-end mt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowProjectForm(false)} 
+                    className="px-5 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/10 transition duration-300"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-5 py-2.5 rounded-full transition duration-300 transform hover:scale-105"
+                  >
+                    Add Project
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {projectToDelete && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+            <div className="glass-card p-8 rounded-2xl w-96 border border-white/20 animate-fadeIn">
+              <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-300 to-pink-300">Confirm Deletion</h2>
+              <p className="mb-6">Are you sure you want to delete project "{projectToDelete.project_name}"?</p>
+              <div className="flex justify-end gap-3">
                 <button 
-                  type="button" 
-                  onClick={() => setShowProjectForm(false)}
-                  className="bg-gray-300 text-black py-2 px-4 rounded"
+                  onClick={cancelDeleteProject} 
+                  className="px-5 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/10 transition duration-300"
                 >
                   Cancel
                 </button>
+                <button 
+                  onClick={confirmDeleteProject} 
+                  className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white px-5 py-2.5 rounded-full transition duration-300 transform hover:scale-105"
+                >
+                  Delete
+                </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {projectToDelete && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-lg">
-            <h2 className="text-red-500 text-xl mb-4">Confirm Deletion</h2>
-            <p className='text-black'>Are you sure you want to delete project "{projectToDelete.project_name}"?</p>
-            <div className="mt-4 flex justify-end">
-              <button 
-                onClick={cancelDeleteProject} 
-                className="bg-gray-300 text-black py-2 px-4 rounded mr-2"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={confirmDeleteProject} 
-                className="bg-red-500 text-white py-2 px-4 rounded"
-              >
-                Delete
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {toast && (
-        <Toast 
-          message={toast.message} 
-          type={toast.type} 
-          visible={toastVisible}
-          onClose={() => {
-            setToastVisible(false);
-            setTimeout(() => setToast(null), 500);
-          }}
-        />
-      )}
+        {/* Toast component remains unchanged */}
+        {toast && (
+          <Toast 
+            message={toast.message} 
+            type={toast.type} 
+            visible={toastVisible}
+            onClose={() => {
+              setToastVisible(false);
+              setTimeout(() => setToast(null), 500);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

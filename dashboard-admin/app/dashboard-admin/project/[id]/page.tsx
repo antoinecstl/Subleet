@@ -177,96 +177,111 @@ export default function AdminProjectDetail() {
   }
 
   return (
-    <div className="min-h-screen p-6 bg-background text-foreground">
-      <button 
-        onClick={() => router.back()} 
-        className="mb-4 px-2 py-1 rounded-lg bg-gradient-to-r from-blue-700 to-purple-700 text-white hover:underline"
-      >
-        &larr; Back
-      </button>
+    <div className="min-h-screen p-6 bg-background text-foreground relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-500 opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-purple-600 opacity-5 blur-3xl"></div>
       
-      {/* Project Details Card */}
-      <div className="mb-8 p-6 bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
-        <div className="flex justify-between items-start">
-          <h1 className="text-2xl font-bold mb-4">{project.project_name}</h1>
-          <button 
-            onClick={toggleProjectStatus}
-            disabled={isUpdating}
-            className={`px-3 py-1 rounded-md ${project.working 
-              ? 'bg-red-500 hover:bg-red-600' 
-              : 'bg-green-500 hover:bg-green-600'} text-white transition`}
-          >
-            {isUpdating ? 'Updating...' : project.working ? 'Disable Project' : 'Enable Project'}
-          </button>
-        </div>
+      <div className="relative z-10 max-w-6xl mx-auto">
+        <button 
+          onClick={() => router.back()} 
+          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+        >
+          &larr; <span>Back</span>
+        </button>
         
-        {clientInfo && (
-          <div className="mb-6 p-4 bg-gray-900 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">Client Information</h3>
-            <p><span className="font-semibold text-gray-400">Name:</span> {clientInfo.name}</p>
-            <p><span className="font-semibold text-gray-400">Email:</span> {clientInfo.email}</p>
-            <p><span className="font-semibold text-gray-400">Phone:</span> {clientInfo.phone || 'N/A'}</p>
-            <p><span className="font-semibold text-gray-400">Registration Date:</span> {clientInfo.creation_date ? 
-              format(new Date(clientInfo.creation_date), 'dd/MM/yyyy') : 'N/A'}</p>
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <p><span className="font-semibold text-gray-400">Status:</span> 
-              <span className={`ml-2 px-2 py-1 rounded ${project.working ? 'bg-green-500' : 'bg-red-500'}`}>
-                {project.working ? 'Active' : 'Inactive'}
-              </span>
-            </p>
-            <p className="mt-2"><span className="font-semibold text-gray-400">Total API Calls:</span> {project.total_call}</p>
-            {project.creation_timestamp && (
-              <p className="mt-2">
-                <span className="font-semibold text-gray-400">Created:</span> {
-                  format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
-                }
-              </p>
-            )}
+        {/* Project Details Card */}
+        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl hover-scale">
+          <div className="flex justify-between items-start mb-6">
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">{project.project_name}</h1>
+            <button 
+              onClick={toggleProjectStatus}
+              disabled={isUpdating}
+              className={`px-4 py-2 rounded-full shadow-lg transition duration-300 transform hover:scale-105 ${project.working 
+                ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600' 
+                : 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600'} text-white`}
+            >
+              {isUpdating ? 'Updating...' : project.working ? 'Disable Project' : 'Enable Project'}
+            </button>
           </div>
           
-          <div>
-            <div className="flex justify-between items-center mb-1">
-              <span className="font-semibold text-gray-400">Context:</span>
-              {!isEditingContext ? (
-                <button 
-                  onClick={startEditingContext}
-                  className="text-xs px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white"
-                >
-                  Edit Context
-                </button>
-              ) : (
-                <div className="space-x-2">
-                  <button 
-                    onClick={saveContextChanges}
-                    disabled={isUpdating}
-                    className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 rounded text-white"
-                  >
-                    {isUpdating ? 'Saving...' : 'Save'}
-                  </button>
-                  <button 
-                    onClick={cancelEditingContext}
-                    className="text-xs px-2 py-1 bg-gray-600 hover:bg-gray-700 rounded text-white"
-                  >
-                    Cancel
-                  </button>
+          {clientInfo && (
+            <div className="mb-8 p-6 glass-card rounded-xl border border-white/10">
+              <h3 className="text-xl font-semibold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Client Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p><span className="font-semibold text-white/70">Name:</span> {clientInfo.name}</p>
+                  <p><span className="font-semibold text-white/70">Email:</span> {clientInfo.email}</p>
                 </div>
+                <div className="space-y-2">
+                  <p><span className="font-semibold text-white/70">Phone:</span> {clientInfo.phone || 'N/A'}</p>
+                  <p><span className="font-semibold text-white/70">Registration:</span> {clientInfo.creation_date ? 
+                    format(new Date(clientInfo.creation_date), 'dd/MM/yyyy') : 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <span className="font-semibold text-white/70 mr-2">Status:</span> 
+                <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
+                  {project.working ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <p><span className="font-semibold text-white/70">Total API Calls:</span> {project.total_call}</p>
+              {project.creation_timestamp && (
+                <p>
+                  <span className="font-semibold text-white/70">Created:</span> {
+                    format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
+                  }
+                </p>
               )}
             </div>
             
-            {isEditingContext ? (
-              <textarea 
-                value={editedContext}
-                onChange={(e) => setEditedContext(e.target.value)}
-                className="w-full h-32 p-3 rounded-md bg-gray-900 text-white border border-gray-700 focus:border-blue-500 focus:outline-none"
-                placeholder="Enter context for this project..."
-              />
-            ) : (
-              <p className="mt-1 bg-gray-900 p-3 rounded-md text-sm">{project.context || 'No context provided'}</p>
-            )}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <span className="font-semibold text-white/70">Context:</span>
+                {!isEditingContext ? (
+                  <button 
+                    onClick={startEditingContext}
+                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
+                  >
+                    Edit Context
+                  </button>
+                ) : (
+                  <div className="space-x-2">
+                    <button 
+                      onClick={saveContextChanges}
+                      disabled={isUpdating}
+                      className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
+                    >
+                      {isUpdating ? 'Saving...' : 'Save'}
+                    </button>
+                    <button 
+                      onClick={cancelEditingContext}
+                      className="px-3 py-1.5 border border-white/20 hover:bg-white/10 rounded-full text-white text-sm transition duration-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {isEditingContext ? (
+                <textarea 
+                  value={editedContext}
+                  onChange={(e) => setEditedContext(e.target.value)}
+                  className="w-full h-32 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
+                  placeholder="Enter context for this project..."
+                />
+              ) : (
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-32 overflow-auto">
+                  <p className="text-sm">{project.context || 'No context provided'}</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

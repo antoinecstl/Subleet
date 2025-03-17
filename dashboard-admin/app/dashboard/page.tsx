@@ -160,8 +160,12 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 pb-20 bg-background text-foreground">
-      <main className="flex flex-col items-center mt-16 max-w-6xl mx-auto">
+    <div className="min-h-screen p-4 sm:p-8 pb-20 bg-background text-foreground relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-500 opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-purple-600 opacity-5 blur-3xl"></div>
+
+      <main className="flex flex-col items-center mt-16 max-w-6xl mx-auto relative z-10">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center p-8">
             <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -170,17 +174,17 @@ export default function Dashboard() {
         ) : (
           <>
             {clientProfile && (
-              <div className="w-full mb-8 p-6 bg-table-bg border border-table-border rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-4">Profile</h2>
+              <div className="w-full mb-8 p-8 glass-card rounded-xl border border-white/10 hover-scale shadow-xl">
+                <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Your Profile</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p><span className="font-semibold">Name:</span> {clientProfile.name}</p>
-                    <p><span className="font-semibold">Email:</span> {clientProfile.email}</p>
+                  <div className="space-y-2">
+                    <p><span className="font-semibold text-white/70">Name:</span> {clientProfile.name}</p>
+                    <p><span className="font-semibold text-white/70">Email:</span> {clientProfile.email}</p>
                   </div>
-                  <div>
-                    <p><span className="font-semibold">Phone:</span> {clientProfile.phone || 'N/A'}</p>
+                  <div className="space-y-2">
+                    <p><span className="font-semibold text-white/70">Phone:</span> {clientProfile.phone || 'N/A'}</p>
                     <p>
-                      <span className="font-semibold">Created:</span> {clientProfile.creation_date 
+                      <span className="font-semibold text-white/70">Created:</span> {clientProfile.creation_date 
                         ? format(new Date(clientProfile.creation_date), 'dd/MM/yyyy') 
                         : 'N/A'}
                     </p>
@@ -188,17 +192,18 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
+
             {projects.length === 0 ? (
-              <div className="text-center p-8 bg-table-bg border border-table-border rounded-lg shadow-lg">
-                <p className="text-lg text-gray-400">No projects found for your account.</p>
-                <p className="mt-2 text-sm text-gray-500">Please contact the administrator for assistance.</p>
+              <div className="text-center p-12 glass-card rounded-xl border border-white/10 shadow-lg w-full">
+                <p className="text-xl text-white/70">No projects found for your account.</p>
+                <p className="mt-2 text-sm text-white/50">Please contact the administrator for assistance.</p>
               </div>
             ) : (
               <div className="w-full">
-                <h1 className="text-3xl font-bold mb-8">Your Projects</h1>
-                <div className="overflow-hidden rounded-xl shadow-2xl border border-table-border">
-                  <table className="min-w-full bg-table-bg">
-                    <thead className="bg-gradient-to-r from-blue-900 to-purple-900">
+                <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Your Projects</h1>
+                <div className="overflow-hidden rounded-xl shadow-2xl glass-card border border-white/10">
+                  <table className="min-w-full">
+                    <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
                       <tr>
                         <th className="py-4 px-6 text-left font-semibold">Project Name</th>
                         <th className="py-4 px-6 text-center font-semibold">Context</th>
@@ -207,7 +212,7 @@ export default function Dashboard() {
                         <th className="py-4 px-6 text-center font-semibold relative">
                           Status
                           <FaSync 
-                            className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer"
+                            className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
                             size={16}
                             onClick={handleRefresh}
                             aria-label="Refresh data"
@@ -219,7 +224,7 @@ export default function Dashboard() {
                       {projects.map((project, index) => (
                         <tr 
                           key={project.project_id} 
-                          className={`cursor-pointer transition-colors duration-150 hover:bg-gray-700 ${index !== projects.length-1 ? 'border-b border-table-border' : ''}`}
+                          className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
                           onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
                         >
                           <td className="py-4 px-6 text-left">{project.project_name}</td>
@@ -229,7 +234,7 @@ export default function Dashboard() {
                           <td className="py-4 px-6 text-center">{project.total_call}</td>
                           <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
                           <td className="py-4 px-6 text-center">
-                            <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500' : 'bg-red-500/20 text-red-400 border border-red-500'}`}>
+                            <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
                               {project.working ? 'Active' : 'Inactive'}
                             </span>
                           </td>
