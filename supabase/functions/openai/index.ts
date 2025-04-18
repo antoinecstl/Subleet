@@ -2,13 +2,12 @@ import OpenAI from 'https://deno.land/x/openai@v4.24.0/mod.ts'
 
 // Définir les en-têtes CORS communs
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'http://localhost:3000', // En production, utilisez mon domaine spécifique
+  'Access-Control-Allow-Origin': 'http://localhost:3001', // En production, utilisez le domaine spécifique
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
 Deno.serve(async (req) => {
-  // Gérer les requêtes OPTIONS (CORS pre-flight)
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,

@@ -59,7 +59,7 @@ export default function Home() {
           {/* Right column - Visual element */}
           <div className="flex-1 animate-slide-right">
             <div className="glass-card rounded-xl p-6 md:p-10 hover-scale">
-              <div className="aspect-video rounded-lg overflow-hidden bg-gradient-to-br from-blue-500/30 to-purple-600/30 flex items-center justify-center">
+              <div className="aspect-video rounded-lg overflow-hidden flex items-center justify-center">
                 <div className="text-center p-8">
                   <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-white/20 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

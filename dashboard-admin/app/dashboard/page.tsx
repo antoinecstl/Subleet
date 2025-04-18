@@ -202,49 +202,52 @@ export default function Dashboard() {
               <div className="w-full">
                 <h1 className="text-3xl font-bold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Your Projects</h1>
                 <div className="overflow-hidden rounded-xl shadow-2xl glass-card border border-white/10">
-                  <table className="min-w-full">
-                    <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
-                      <tr>
-                        <th className="py-4 px-6 text-left font-semibold">Project Name</th>
-                        <th className="py-4 px-6 text-center font-semibold">Context</th>
-                        <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
-                        <th className="py-4 px-6 text-center font-semibold">Creation date</th>
-                        <th className="py-4 px-6 text-center font-semibold relative">
-                          Status
-                          <FaSync 
-                            className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
-                            size={16}
-                            onClick={handleRefresh}
-                            aria-label="Refresh data"
-                          />
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {projects.map((project, index) => (
-                        <tr 
-                          key={project.project_id} 
-                          className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
-                          onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
-                        >
-                          <td className="py-4 px-6 text-left">{project.project_name}</td>
-                          <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
-                            {truncateText(project.context)}
-                          </td>
-                          <td className="py-4 px-6 text-center">{project.total_call}</td>
-                          <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
-                          <td className="py-4 px-6 text-center">
-                            <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
-                              {project.working ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full">
+                      <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
+                        <tr>
+                          <th className="py-4 px-6 text-left font-semibold">Project Name</th>
+                          <th className="py-4 px-6 text-center font-semibold">Context</th>
+                          <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
+                          <th className="py-4 px-6 text-center font-semibold">Creation date</th>
+                          <th className="py-4 px-6 text-center font-semibold relative">
+                            Status
+                            <FaSync 
+                              className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
+                              size={16}
+                              onClick={handleRefresh}
+                              aria-label="Refresh data"
+                            />
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {projects.map((project, index) => (
+                          <tr 
+                            key={project.project_id} 
+                            className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
+                            onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
+                          >
+                            <td className="py-4 px-6 text-left">{project.project_name}</td>
+                            <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
+                              {truncateText(project.context)}
+                            </td>
+                            <td className="py-4 px-6 text-center">{project.total_call}</td>
+                            <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
+                            <td className="py-4 px-6 text-center">
+                              <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
+                                {project.working ? 'Active' : 'Inactive'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
+
           </>
         )}
 

@@ -260,58 +260,60 @@ export default function ClientDetail() {
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl shadow-2xl glass-card border border-white/10">
-            <table className="min-w-full">
-              <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
-                <tr>
-                  <th className="py-4 px-6 text-left font-semibold">Project Name</th>
-                  <th className="py-4 px-6 text-center font-semibold">Context</th>
-                  <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
-                  <th className="py-4 px-6 text-center font-semibold">Creation date</th>
-                  <th className="py-4 px-6 text-center font-semibold">Status</th>
-                  <th className="py-4 px-6 text-center font-semibold relative">
-                    Actions
-                    <FaSync 
-                      className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
-                      size={16}
-                      onClick={handleRefresh}
-                      aria-label="Refresh data"
-                    />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.map((project, index) => (
-                  <tr 
-                    key={project.project_id} 
-                    className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
-                    onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
-                  >
-                    <td className="py-4 px-6 text-left">{project.project_name}</td>
-                    <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
-                      {truncateText(project.context)}
-                    </td>
-                    <td className="py-4 px-6 text-center">{project.total_call}</td>
-                    <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
-                    <td className="py-4 px-6 text-center">
-                      <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
-                        {project.working ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-center">
-                      <button 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          setProjectToDelete(project);
-                        }} 
-                        className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-1.5 px-4 rounded-full transition duration-300 transform hover:scale-105 shadow-md"
-                      >
-                        Delete
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
+                  <tr>
+                    <th className="py-4 px-6 text-left font-semibold">Project Name</th>
+                    <th className="py-4 px-6 text-center font-semibold">Context</th>
+                    <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
+                    <th className="py-4 px-6 text-center font-semibold">Creation date</th>
+                    <th className="py-4 px-6 text-center font-semibold">Status</th>
+                    <th className="py-4 px-6 text-center font-semibold relative">
+                      Actions
+                      <FaSync 
+                        className="absolute top-1/2 right-4 transform -translate-y-1/2 text-blue-400 hover:text-blue-600 cursor-pointer hover:rotate-180 transition-all duration-500"
+                        size={16}
+                        onClick={handleRefresh}
+                        aria-label="Refresh data"
+                      />
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {projects.map((project, index) => (
+                    <tr 
+                      key={project.project_id} 
+                      className={`cursor-pointer transition-colors duration-150 hover:bg-white/5 ${index !== projects.length-1 ? 'border-b border-white/10' : ''}`}
+                      onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
+                    >
+                      <td className="py-4 px-6 text-left">{project.project_name}</td>
+                      <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
+                        {truncateText(project.context)}
+                      </td>
+                      <td className="py-4 px-6 text-center">{project.total_call}</td>
+                      <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
+                      <td className="py-4 px-6 text-center">
+                        <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
+                          {project.working ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6 text-center">
+                        <button 
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setProjectToDelete(project);
+                          }} 
+                          className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white py-1.5 px-4 rounded-full transition duration-300 transform hover:scale-105 shadow-md"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 

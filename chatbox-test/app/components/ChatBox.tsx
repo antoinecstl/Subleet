@@ -44,7 +44,7 @@ export default function ChatBox() {
   // Appeler l'Edge Function avec la requête de l'utilisateur
   const callOpenAIEdgeFunction = async (userQuery: string) => {
     try {
-      const contextPrompt = "Contexte Général : Tu es un assistant virtuel destiné à répondre aux questions des clients sur un site marchand spécialisé dans la vente d'équipements de course à pied. Ta mission est de fournir des réponses précises et utiles basées uniquement sur les informations disponibles dans le contexte spécifique ci-dessous. Tu dois rester cordial, professionnel et éviter d'inventer des informations., optimise tes réponses pour qu'elle ne soit pas à rallonge";
+      const contextPrompt = "Contexte Général : Tu es un assistant virtuel destiné à répondre aux questions des clients sur un site marchand spécialisé dans la vente d'équipements de course à pied. Ta mission est de fournir des réponses précises et utiles basées uniquement sur les informations disponibles dans le contexte spécifique ci-dessous. Tu dois rester cordial, professionnel et éviter d'inventer des informations., optimise tes réponses pour qu'elle ne soit pas à rallonge, les horaires du magasin sont du lundi au vendredi de 9h à 18h et le samedi de 9h à 12h.";
       
       const response = await fetch("http://localhost:54321/functions/v1/openai", {
         method: "POST",
