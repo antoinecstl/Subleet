@@ -1,10 +1,19 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
+import { FaTrash, FaUpload, FaFileAlt, FaSync } from 'react-icons/fa';
+
+interface VectorFile {
+  id: string;
+  filename: string;
+  size: number;
+  created_at: string;
+  purpose: string;
+}
 
 export default function AdminProjectDetail() {
   const { id } = useParams();
@@ -17,6 +26,13 @@ export default function AdminProjectDetail() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [isEditingContext, setIsEditingContext] = useState(false);
   const [editedContext, setEditedContext] = useState('');
+  
+  // États pour Vector Store
+  const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
@@ -56,6 +72,12 @@ export default function AdminProjectDetail() {
   }, [id]);
 
   useEffect(() => {
+    if (project) {
+      fetchVectorFiles();
+    }
+  }, [project]);
+
+  useEffect(() => {
     if (toast) {
       setToastVisible(true);
       const timer = setTimeout(() => {
@@ -65,6 +87,23 @@ export default function AdminProjectDetail() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  const fetchVectorFiles = async () => {
+    try {
+      setLoadingFiles(true);
+      const response = await fetch(`/api/admin/vector-store/files?project_id=${id}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setVectorFiles(data.files || []);
+    } catch (error) {
+      console.error('Failed to fetch vector files:', error);
+      setToast({ message: 'Failed to load vector files', type: 'error' });
+    } finally {
+      setLoadingFiles(false);
+    }
+  };
 
   const toggleProjectStatus = async () => {
     if (!project || isUpdating) return;
@@ -152,6 +191,74 @@ export default function AdminProjectDetail() {
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      setToast({ message: 'Please select a file to upload', type: 'error' });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('project_id', id as string);
+      formData.append('file', selectedFile);
+
+      const response = await fetch('/api/admin/vector-store/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload file');
+      }
+
+      setToast({ message: 'File uploaded successfully', type: 'success' });
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      fetchVectorFiles(); // Refresh file list
+    } catch (error) {
+      console.error('Upload error:', error);
+      setToast({ message: 'Failed to upload file', type: 'error' });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      const response = await fetch(`/api/admin/vector-store/delete?project_id=${id}&file_id=${fileId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete file');
+      }
+
+      setToast({ message: 'File deleted successfully', type: 'success' });
+      fetchVectorFiles(); // Refresh file list
+    } catch (error) {
+      console.error('Delete error:', error);
+      setToast({ message: 'Failed to delete file', type: 'error' });
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' bytes';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+    else return (bytes / 1073741824).toFixed(1) + ' GB';
   };
 
   if (loading) {
@@ -283,6 +390,102 @@ export default function AdminProjectDetail() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* Vector Store Files Section */}
+        <div className="p-8 glass-card rounded-xl border border-white/10 shadow-xl mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
+              Vector Store Files
+            </h2>
+            <button 
+              onClick={fetchVectorFiles}
+              className="p-2 rounded-full hover:bg-white/10 transition"
+              disabled={loadingFiles}
+            >
+              <FaSync className={`text-blue-400 ${loadingFiles ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+
+          <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+            <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+              <div className="flex-grow w-full">
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  className="w-full text-sm file:mr-4 file:py-2 file:px-4
+                    file:rounded-full file:border-0
+                    file:text-sm file:font-semibold file:cursor-pointer
+                    file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:text-white
+                    hover:file:from-blue-700 hover:file:to-purple-700
+                    text-white/70 cursor-pointer"
+                  accept=".txt,.md,.pdf,.csv,.json,.html,.htm"
+                  ref={fileInputRef}
+                />
+              </div>
+              <button
+                onClick={handleFileUpload}
+                disabled={!selectedFile || isUploading}
+                className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition transform hover:scale-105 flex items-center gap-2 w-full sm:w-auto justify-center"
+              >
+                <FaUpload />
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </button>
+            </div>
+            <p className="text-xs text-white/50">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
+          </div>
+
+          {loadingFiles ? (
+            <div className="flex justify-center items-center p-8">
+              <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : vectorFiles.length > 0 ? (
+            <div className="overflow-hidden rounded-xl bg-white/5 border border-white/10">
+              <table className="min-w-full">
+                <thead className="bg-gradient-to-r from-blue-800/50 to-purple-800/50">
+                  <tr>
+                    <th className="py-3 px-4 text-left font-semibold">Filename</th>
+                    <th className="py-3 px-4 text-center font-semibold">Size</th>
+                    <th className="py-3 px-4 text-center font-semibold">Date</th>
+                    <th className="py-3 px-4 text-center font-semibold">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vectorFiles.map((file, index) => (
+                    <tr 
+                      key={file.id} 
+                      className={`transition-colors duration-150 hover:bg-white/5 ${index !== vectorFiles.length-1 ? 'border-b border-white/10' : ''}`}
+                    >
+                      <td className="py-3 px-4 text-left">
+                        <div className="flex items-center gap-2">
+                          <FaFileAlt className="text-blue-400" />
+                          {file.filename}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">{formatFileSize(file.size)}</td>
+                      <td className="py-3 px-4 text-center">
+                        {new Date(file.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="p-2 rounded-full hover:bg-red-500/20 text-red-400 transition"
+                          title="Delete file"
+                        >
+                          <FaTrash />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center p-8 rounded-xl bg-white/5 border border-white/10">
+              <p className="text-white/50">No files have been uploaded to the Vector Store yet.</p>
+              <p className="text-sm text-white/30 mt-2">Upload files to enable RAG capabilities for this project.</p>
+            </div>
+          )}
         </div>
       </div>
 

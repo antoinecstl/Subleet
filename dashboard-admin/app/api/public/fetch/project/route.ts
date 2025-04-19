@@ -57,8 +57,24 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized access to project' }, { status: 403 });
     }
 
+    // Fetch vector store info
+    const { data: vectorStoreData } = await supabase
+      .from('vector_stores')
+      .select('openai_vector_id')
+      .eq('project_id', projectId)
+      .single();
+
+    // Fetch the API key
+    const { data: apiKeyData } = await supabase
+      .from('api_keys')
+      .select('api_key')
+      .eq('project_id', projectId)
+      .single();
+
     return NextResponse.json({
       project: projectData,
+      apiKey: apiKeyData?.api_key || null,
+      vectorStoreId: vectorStoreData?.openai_vector_id || null
     });
 
   } catch (error) {

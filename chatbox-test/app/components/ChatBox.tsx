@@ -15,6 +15,9 @@ export default function ChatBox() {
   const [currentMessage, setCurrentMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Récupérer l'ID du Vector Store depuis les variables d'environnement
+  const vectorStoreId = process.env.NEXT_PUBLIC_VECTOR_STORE_ID || "";
 
   useEffect(() => {
     // Appeler clearChat directement au chargement du composant
@@ -52,7 +55,9 @@ export default function ChatBox() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          query: `${contextPrompt}\n\nQuestion du client: ${userQuery}`
+          query: `${contextPrompt}\n\nQuestion du client: ${userQuery}`,
+          context: contextPrompt,
+          vector_store_id: vectorStoreId // Ajout de l'ID du Vector Store
         })
       });
       

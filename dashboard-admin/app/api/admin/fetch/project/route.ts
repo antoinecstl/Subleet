@@ -26,6 +26,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 });
     }
 
+    // Fetch vector store info
+    const { data: vectorStoreData } = await supabase
+      .from('vector_stores')
+      .select('openai_vector_id')
+      .eq('project_id', projectId)
+      .single();
+
     // Fetch client info for this project
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
@@ -52,7 +59,8 @@ export async function GET(request: Request) {
       project: projectData,
       clientInfo: clientData || null,
       apiKey: apiKeyData?.api_key || null,
-      callHistory: callHistory || []
+      callHistory: callHistory || [],
+      vectorStoreId: vectorStoreData?.openai_vector_id || null
     });
 
   } catch (error) {
