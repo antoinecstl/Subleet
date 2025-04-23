@@ -16,6 +16,14 @@ export interface VectorFile {
   purpose: string;
 }
 
+// Interface pour les assistants
+export interface Assistant {
+  id: string;
+  name: string;
+  model: string;
+  created_at: string;
+}
+
 /**
  * Crée un nouveau Vector Store
  * @param name Nom du Vector Store
@@ -43,6 +51,81 @@ export async function deleteVectorStore(vectorStoreId: string): Promise<void> {
     await openai.vectorStores.del(vectorStoreId);
   } catch (error) {
     console.error('Error deleting vector store:', error);
+    throw error;
+  }
+}
+
+/**
+ * Crée un nouveau Assistant
+ * @param name Nom de l'Assistant
+ * @param vectorStoreId ID du Vector Store à associer à l'assistant (optionnel)
+ * @returns L'ID de l'Assistant créé et ses détails
+ */
+export async function createAssistant(name: string, vectorStoreId?: string): Promise<Assistant> {
+  try {
+    const instructions = `Tu es un assistant virtuel intelligent nommé Catalisia, créé par Catalisia SAS pour aider les utilisateurs à trouver des informations et répondre à leurs questions. Tu dois fournir des réponses précises, utiles et professionnelles.
+
+Consignes:
+1. Base tes réponses uniquement sur les informations disponibles dans le Vector Store.
+2. Si tu ne connais pas la réponse, dis-le clairement et suggère à l'utilisateur de contacter l'équipe support.
+3. Réponds en utilisant un ton professionnel et amical.
+4. Utilise des phrases courtes et précises pour faciliter la lecture.
+5. Adapte ton style pour répondre à des questions techniques comme des questions générales.
+6. N'invente pas d'informations qui ne seraient pas dans le Vector Store.`;
+
+    // Créer l'assistant avec l'outil file_search, mais sans associer de Vector Store spécifique
+    // Le Vector Store sera associé lors de l'exécution du Run
+    const assistant = await openai.beta.assistants.create({
+      name,
+      instructions,
+      model: "gpt-4o-mini",
+      tools: [{ type: "file_search" }]
+    });
+    
+    return {
+      id: assistant.id,
+      name: assistant.name ?? name,
+      model: assistant.model,
+      created_at: new Date().toISOString() // OpenAI ne fournit pas toujours la date de création
+    };
+  } catch (error) {
+    console.error('Error creating assistant:', error);
+    throw error;
+  }
+}
+
+/**
+ * Met à jour un assistant existant pour utiliser un Vector Store
+ * @param assistantId ID de l'Assistant
+ * @param vectorStoreId ID du Vector Store
+ */
+export async function updateAssistantVectorStore(assistantId: string, vectorStoreId: string): Promise<void> {
+  try {
+    await openai.beta.assistants.update(
+      assistantId,
+      {
+        tool_resources: {
+          file_search: {
+            vector_store_ids: [vectorStoreId]
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error updating assistant with vector store:', error);
+    throw error;
+  }
+}
+
+/**
+ * Supprime un Assistant
+ * @param assistantId ID de l'Assistant
+ */
+export async function deleteAssistant(assistantId: string): Promise<void> {
+  try {
+    await openai.beta.assistants.del(assistantId);
+  } catch (error) {
+    console.error('Error deleting assistant:', error);
     throw error;
   }
 }

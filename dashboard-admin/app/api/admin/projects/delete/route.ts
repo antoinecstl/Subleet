@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { deleteVectorStore } from '../../../../../lib/vector-store-utils';
+import { deleteVectorStore, deleteAssistant } from '../../../../../lib/vector-store-utils';
 
 dotenv.config();
 
@@ -15,17 +15,18 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: 'Project ID is required' }, { status: 400 });
     }
 
-    // Récupérer l'ID du Vector Store avant de supprimer le projet
+    // Récupérer l'ID du Vector Store et de l'Assistant avant de supprimer le projet
     const { data: vectorStoreData, error: vectorStoreError } = await supabase
       .from('vector_stores')
       .select('openai_vector_id')
       .eq('project_id', id)
       .single();
 
-    if (vectorStoreError && vectorStoreError.code !== 'PGRST116') {
-      // PGRST116 signifie "no rows returned", ce qui est acceptable
-      console.error('Error fetching vector store:', vectorStoreError);
-    }
+    const { data: assistantData, error: assistantError } = await supabase
+      .from('assistants')
+      .select('openai_assistant_id')
+      .eq('project_id', id)
+      .single();
 
     // Supprimer le vector store si trouvé
     if (vectorStoreData && vectorStoreData.openai_vector_id) {
@@ -37,7 +38,17 @@ export async function DELETE(request: Request) {
       }
     }
 
-    // DELETE CASCADE s'occupera de supprimer les entrées dans vector_stores
+    // Supprimer l'assistant si trouvé
+    if (assistantData && assistantData.openai_assistant_id) {
+      try {
+        await deleteAssistant(assistantData.openai_assistant_id);
+      } catch (error) {
+        console.error('Error deleting assistant:', error);
+        // Continuer malgré l'erreur pour ne pas bloquer la suppression du projet
+      }
+    }
+
+    // DELETE CASCADE s'occupera de supprimer les entrées dans vector_stores et assistants
     const { data, error } = await supabase
       .from('projects')
       .delete()

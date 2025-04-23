@@ -32,19 +32,19 @@ export async function GET(request: Request) {
       .select('openai_vector_id')
       .eq('project_id', projectId)
       .single();
+      
+    // Fetch assistant info
+    const { data: assistantData } = await supabase
+      .from('assistants')
+      .select('openai_assistant_id')
+      .eq('project_id', projectId)
+      .single();
 
     // Fetch client info for this project
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .select('id, name, email')
       .eq('id', projectData.project_owner)
-      .single();
-
-    // Fetch the API key
-    const { data: apiKeyData } = await supabase
-      .from('api_keys')
-      .select('api_key')
-      .eq('project_id', projectId)
       .single();
 
     // Fetch call history
@@ -58,9 +58,9 @@ export async function GET(request: Request) {
     return NextResponse.json({
       project: projectData,
       clientInfo: clientData || null,
-      apiKey: apiKeyData?.api_key || null,
       callHistory: callHistory || [],
-      vectorStoreId: vectorStoreData?.openai_vector_id || null
+      vectorStoreId: vectorStoreData?.openai_vector_id || null,
+      assistantId: assistantData?.openai_assistant_id || null
     });
 
   } catch (error) {

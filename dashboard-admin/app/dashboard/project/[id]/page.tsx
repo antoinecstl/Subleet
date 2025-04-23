@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
-import { FaTrash, FaUpload, FaFileAlt, FaSync } from 'react-icons/fa';
+import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
 
 interface VectorFile {
   id: string;
@@ -32,6 +32,9 @@ export default function ProjectDetail() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
+  const [assistantId, setAssistantId] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
@@ -42,6 +45,8 @@ export default function ProjectDetail() {
           if (cachedData) {
             setProject(cachedData.project);
             setEditedContext(cachedData.project.context || '');
+            setVectorStoreId(cachedData.vectorStoreId || null);
+            setAssistantId(cachedData.assistantId || null);
             setLoading(false);
             return;
           }
@@ -59,9 +64,15 @@ export default function ProjectDetail() {
         
         setProject(data.project);
         setEditedContext(data.project.context || '');
+        setVectorStoreId(data.vectorStoreId || null);
+        setAssistantId(data.assistantId || null);
         
         // Cache the result
-        setCache(`cache_project_${id}`, { project: data.project });
+        setCache(`cache_project_${id}`, { 
+          project: data.project,
+          vectorStoreId: data.vectorStoreId,
+          assistantId: data.assistantId
+        });
       } catch (error) {
         console.error('Error fetching project:', error);
         setToast({ message: error instanceof Error ? error.message : 'Failed to fetch project data', type: 'error' });
@@ -213,6 +224,19 @@ export default function ProjectDetail() {
     else return (bytes / 1073741824).toFixed(1) + ' GB';
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => {
+        setCopySuccess(true);
+        setToast({ message: 'ID copié dans le presse-papier', type: 'success' });
+        setTimeout(() => setCopySuccess(false), 2000);
+      })
+      .catch(err => {
+        console.error('Could not copy text: ', err);
+        setToast({ message: 'Échec de la copie', type: 'error' });
+      });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -270,6 +294,50 @@ export default function ProjectDetail() {
                     format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
                   }
                 </p>
+              )}
+              
+              {/* Affichage du Vector Store ID */}
+              {vectorStoreId && (
+                <div className="mt-2">
+                  <p className="font-semibold text-white/70 mb-1">Vector Store ID:</p>
+                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
+                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                      {vectorStoreId}
+                    </code>
+                    <button 
+                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
+                      onClick={() => copyToClipboard(vectorStoreId)}
+                      title="Copier l'ID"
+                    >
+                      <FaCopy size={14} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1">
+                    Cet ID est nécessaire pour le chatbot RAG
+                  </p>
+                </div>
+              )}
+              
+              {/* Ajout de l'affichage de l'Assistant ID */}
+              {assistantId && (
+                <div className="mt-4">
+                  <p className="font-semibold text-white/70 mb-1">Assistant ID:</p>
+                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
+                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                      {assistantId}
+                    </code>
+                    <button 
+                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
+                      onClick={() => copyToClipboard(assistantId)}
+                      title="Copier l'ID"
+                    >
+                      <FaCopy size={14} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1">
+                    Cet ID est nécessaire pour utiliser l'assistant dans votre chatbot
+                  </p>
+                </div>
               )}
             </div>
             

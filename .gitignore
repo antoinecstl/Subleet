@@ -2,3 +2,5 @@
 .env*
 //ignorer docker-compose.yml
 docker-compose.yml
+//ignorer le dossier scraped_data
+scraped_data/
