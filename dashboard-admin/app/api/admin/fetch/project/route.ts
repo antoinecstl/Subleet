@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { getAssistant } from '@/lib/vector-store-utils';
 
 dotenv.config();
 
@@ -43,7 +44,7 @@ export async function GET(request: Request) {
     // Fetch client info for this project
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
-      .select('id, name, email')
+      .select('id, name, email, phone, creation_date')
       .eq('id', projectData.project_owner)
       .single();
 
@@ -54,13 +55,25 @@ export async function GET(request: Request) {
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false })
       .limit(20);
+      
+    // Récupérer les détails complets de l'assistant depuis OpenAI
+    let assistant = null;
+    if (assistantData?.openai_assistant_id) {
+      try {
+        assistant = await getAssistant(assistantData.openai_assistant_id);
+      } catch (error) {
+        console.error('Error fetching assistant details:', error);
+        // Ne pas bloquer le reste de la réponse si l'assistant n'est pas récupérable
+      }
+    }
 
     return NextResponse.json({
       project: projectData,
       clientInfo: clientData || null,
       callHistory: callHistory || [],
       vectorStoreId: vectorStoreData?.openai_vector_id || null,
-      assistantId: assistantData?.openai_assistant_id || null
+      assistantId: assistantData?.openai_assistant_id || null,
+      assistant: assistant
     });
 
   } catch (error) {

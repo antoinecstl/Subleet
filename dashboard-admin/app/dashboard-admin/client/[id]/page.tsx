@@ -15,7 +15,6 @@ export default function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
-  const [newContext, setNewContext] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<any>(null);
@@ -82,7 +81,7 @@ export default function ClientDetail() {
       const response = await fetch('/api/admin/projects/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_name: newProjectName, project_owner: client.id, context: newContext })
+        body: JSON.stringify({ project_name: newProjectName, project_owner: client.id})
       });
       const data = await response.json();
       if (!response.ok) {
@@ -94,7 +93,6 @@ export default function ClientDetail() {
         ...data.project,
         total_call: data.project.total_call || 0,
         working: data.project.working !== undefined ? data.project.working : true,
-        context: data.project.context || newContext || '',
         creation_timestamp: data.project.creation_timestamp || Date.now()
       };
       
@@ -120,7 +118,6 @@ export default function ClientDetail() {
       setToast({ message: data.message, type: 'success' });
       setShowProjectForm(false);
       setNewProjectName('');
-      setNewContext('');
     } catch (err: any) {
       setToast({ message: err.message, type: 'error' });
     }
@@ -265,7 +262,6 @@ export default function ClientDetail() {
                 <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
                   <tr>
                     <th className="py-4 px-6 text-left font-semibold">Project Name</th>
-                    <th className="py-4 px-6 text-center font-semibold">Context</th>
                     <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
                     <th className="py-4 px-6 text-center font-semibold">Creation date</th>
                     <th className="py-4 px-6 text-center font-semibold">Status</th>
@@ -288,9 +284,6 @@ export default function ClientDetail() {
                       onClick={() => router.push(`/dashboard-admin/project/${project.project_id}`)}
                     >
                       <td className="py-4 px-6 text-left">{project.project_name}</td>
-                      <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
-                        {truncateText(project.context)}
-                      </td>
                       <td className="py-4 px-6 text-center">{project.total_call}</td>
                       <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
                       <td className="py-4 px-6 text-center">
@@ -328,12 +321,6 @@ export default function ClientDetail() {
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder="Project Name"
                   className="p-3 rounded-lg bg-white/10 border border-white/10 focus:border-blue-500 focus:outline-none text-white"
-                />
-                <textarea
-                  value={newContext}
-                  onChange={(e) => setNewContext(e.target.value)}
-                  placeholder="Context (optional)"
-                  className="p-3 rounded-lg bg-white/10 border border-white/10 focus:border-blue-500 focus:outline-none text-white h-32 resize-none"
                 />
                 <div className="flex gap-3 justify-end mt-2">
                   <button 

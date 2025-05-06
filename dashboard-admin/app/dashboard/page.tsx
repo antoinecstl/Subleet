@@ -11,7 +11,6 @@ import { FaSync } from 'react-icons/fa';
 interface Project {
   project_id: number;
   project_name: string;
-  context: string;
   total_call: number;
   working: boolean;
   creation_timestamp: number;
@@ -174,7 +173,7 @@ export default function Dashboard() {
         ) : (
           <>
             {clientProfile && (
-              <div className="w-full mb-8 p-8 glass-card rounded-xl border border-white/10 hover-scale shadow-xl">
+              <div className="w-full mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl">
                 <h2 className="text-2xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Your Profile</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -207,7 +206,6 @@ export default function Dashboard() {
                       <thead className="bg-gradient-to-r from-blue-800 to-purple-800">
                         <tr>
                           <th className="py-4 px-6 text-left font-semibold">Project Name</th>
-                          <th className="py-4 px-6 text-center font-semibold">Context</th>
                           <th className="py-4 px-6 text-center font-semibold">Total Calls</th>
                           <th className="py-4 px-6 text-center font-semibold">Creation date</th>
                           <th className="py-4 px-6 text-center font-semibold relative">
@@ -229,9 +227,6 @@ export default function Dashboard() {
                             onClick={() => router.push(`/dashboard/project/${project.project_id}`)}
                           >
                             <td className="py-4 px-6 text-left">{project.project_name}</td>
-                            <td className="py-4 px-6 text-center" title={project.context || 'N/A'}>
-                              {truncateText(project.context)}
-                            </td>
                             <td className="py-4 px-6 text-center">{project.total_call}</td>
                             <td className="py-4 px-6 text-center">{format(new Date(project.creation_timestamp), 'dd/MM/yyyy')}</td>
                             <td className="py-4 px-6 text-center">

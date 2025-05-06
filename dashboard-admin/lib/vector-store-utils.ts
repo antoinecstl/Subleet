@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
+import { SUPPORTED_MODELS } from './constants';
 
 dotenv.config();
 
@@ -22,7 +23,11 @@ export interface Assistant {
   name: string;
   model: string;
   created_at: string;
+  instructions?: string;
 }
+
+// Réexporter les modèles supportés
+export { SUPPORTED_MODELS };
 
 /**
  * Crée un nouveau Vector Store
@@ -59,10 +64,17 @@ export async function deleteVectorStore(vectorStoreId: string): Promise<void> {
  * Crée un nouveau Assistant
  * @param name Nom de l'Assistant
  * @param vectorStoreId ID du Vector Store à associer à l'assistant (optionnel)
+ * @param model Le modèle à utiliser pour l'assistant (optionnel, par défaut gpt-4o-mini)
  * @returns L'ID de l'Assistant créé et ses détails
  */
-export async function createAssistant(name: string, vectorStoreId?: string): Promise<Assistant> {
+export async function createAssistant(name: string, vectorStoreId?: string, model: string = 'gpt-4.1-nano'): Promise<Assistant> {
   try {
+    // Vérifier que le modèle est supporté
+    if (!SUPPORTED_MODELS.includes(model)) {
+      console.warn(`Le modèle ${model} n'est pas dans la liste des modèles supportés. Utilisation du modèle par défaut gpt-4.1-nano.`);
+      model = 'gpt-4.1-nano';
+    }
+
     const instructions = `Tu es un assistant virtuel intelligent nommé Catalisia, créé par Catalisia SAS pour aider les utilisateurs à trouver des informations et répondre à leurs questions. Tu dois fournir des réponses précises, utiles et professionnelles.
 
 Consignes:
@@ -78,7 +90,7 @@ Consignes:
     const assistant = await openai.beta.assistants.create({
       name,
       instructions,
-      model: "gpt-4o-mini",
+      model,
       tools: [{ type: "file_search" }]
     });
     
@@ -86,10 +98,81 @@ Consignes:
       id: assistant.id,
       name: assistant.name ?? name,
       model: assistant.model,
+      instructions: assistant.instructions ?? undefined,
       created_at: new Date().toISOString() // OpenAI ne fournit pas toujours la date de création
     };
   } catch (error) {
     console.error('Error creating assistant:', error);
+    throw error;
+  }
+}
+
+/**
+ * Récupère les informations d'un assistant
+ * @param assistantId ID de l'Assistant
+ * @returns Les détails de l'assistant
+ */
+export async function getAssistant(assistantId: string): Promise<Assistant> {
+  try {
+    const assistant = await openai.beta.assistants.retrieve(assistantId);
+    
+    return {
+      id: assistant.id,
+      name: assistant.name ?? 'Assistant',
+      model: assistant.model,
+      instructions: assistant.instructions ?? '',
+      created_at: new Date(assistant.created_at * 1000).toISOString()
+    };
+  } catch (error) {
+    console.error('Error retrieving assistant:', error);
+    throw error;
+  }
+}
+
+/**
+ * Met à jour les instructions et/ou le modèle d'un assistant existant
+ * @param assistantId ID de l'Assistant
+ * @param instructions Nouvelles instructions (optionnel)
+ * @param model Nouveau modèle à utiliser (optionnel)
+ * @returns L'assistant mis à jour
+ */
+export async function updateAssistant(
+  assistantId: string, 
+  instructions?: string,
+  model?: string
+): Promise<Assistant> {
+  try {
+    const updateParams: any = {};
+    
+    if (instructions !== undefined) {
+      updateParams.instructions = instructions;
+    }
+    
+    if (model !== undefined) {
+      // Vérifier que le modèle est supporté
+      if (!SUPPORTED_MODELS.includes(model)) {
+        throw new Error(`Le modèle ${model} n'est pas supporté. Modèles disponibles: ${SUPPORTED_MODELS.join(', ')}`);
+      }
+      updateParams.model = model;
+    }
+    
+    // Ne mettre à jour que si des paramètres sont fournis
+    if (Object.keys(updateParams).length === 0) {
+      // Si aucun paramètre de mise à jour, simplement récupérer l'assistant actuel
+      return await getAssistant(assistantId);
+    }
+    
+    const assistant = await openai.beta.assistants.update(assistantId, updateParams);
+    
+    return {
+      id: assistant.id,
+      name: assistant.name ?? 'Assistant',
+      model: assistant.model,
+      instructions: assistant.instructions ?? '',
+      created_at: new Date(assistant.created_at * 1000).toISOString()
+    };
+  } catch (error) {
+    console.error('Error updating assistant:', error);
     throw error;
   }
 }

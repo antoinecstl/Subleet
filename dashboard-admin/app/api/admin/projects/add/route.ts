@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { createVectorStore, createAssistant } from '../../../../../lib/vector-store-utils';
+import { createVectorStore, createAssistant, SUPPORTED_MODELS } from '../../../../../lib/vector-store-utils';
 
 dotenv.config();
 
@@ -9,10 +9,17 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function POST(request: Request) {
   try {
-    const { project_name, project_owner, context } = await request.json();
+    const { project_name, project_owner, instructions, model } = await request.json();
 
     if (!project_name || !project_owner) {
       return NextResponse.json({ error: 'Project name and owner are required' }, { status: 400 });
+    }
+
+    // Vérifier si le modèle est supporté
+    if (model && !SUPPORTED_MODELS.includes(model)) {
+      return NextResponse.json({ 
+        error: `Le modèle ${model} n'est pas supporté. Modèles disponibles: ${SUPPORTED_MODELS.join(', ')}` 
+      }, { status: 400 });
     }
 
     // Créer un Vector Store pour le projet
@@ -27,11 +34,10 @@ export async function POST(request: Request) {
     // Créer un Assistant pour le projet
     let assistantData;
     try {
-      assistantData = await createAssistant(project_name, vectorStoreId);
+      assistantData = await createAssistant(project_name, vectorStoreId, model || 'gpt-4.1-nano');
     } catch (error) {
       console.error('Failed to create assistant:', error);
-      // Continuer malgré l'erreur car le Vector Store a été créé avec succès
-      // La création de l'assistant pourra être réessayée ultérieurement
+      return NextResponse.json({ error: 'Failed to create Assistant' }, { status: 500 });
     }
 
     // Insert into projects
@@ -40,7 +46,6 @@ export async function POST(request: Request) {
       .insert([{ 
         project_name, 
         project_owner, 
-        context: context || null,
         working: true // Default to active
       }])
       .select()

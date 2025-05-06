@@ -20,11 +20,14 @@ export default function ProjectDetail() {
   const router = useRouter();
   const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [editedContext, setEditedContext] = useState('');
+  const [editedInstructions, setEditedInstructions] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
+  
+  // États pour l'assistant
+  const [assistantInfo, setAssistantInfo] = useState<any>(null);
   
   // États pour Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
@@ -44,7 +47,8 @@ export default function ProjectDetail() {
           const cachedData = getCache<any>(`cache_project_${id}`);
           if (cachedData) {
             setProject(cachedData.project);
-            setEditedContext(cachedData.project.context || '');
+            setAssistantInfo(cachedData.assistant || null);
+            setEditedInstructions(cachedData.assistant?.instructions || '');
             setVectorStoreId(cachedData.vectorStoreId || null);
             setAssistantId(cachedData.assistantId || null);
             setLoading(false);
@@ -63,13 +67,15 @@ export default function ProjectDetail() {
         }
         
         setProject(data.project);
-        setEditedContext(data.project.context || '');
+        setAssistantInfo(data.assistant || null);
+        setEditedInstructions(data.assistant?.instructions || '');
         setVectorStoreId(data.vectorStoreId || null);
         setAssistantId(data.assistantId || null);
         
         // Cache the result
         setCache(`cache_project_${id}`, { 
           project: data.project,
+          assistant: data.assistant,
           vectorStoreId: data.vectorStoreId,
           assistantId: data.assistantId
         });
@@ -118,15 +124,15 @@ export default function ProjectDetail() {
     }
   };
 
-  const handleSaveContext = async () => {
+  const handleSaveInstructions = async () => {
     if (isUpdating) return;
     
     setIsUpdating(true);
     try {
-      const response = await fetch('/api/public/projects/update', {
+      const response = await fetch('/api/public/assistants/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ project_id: id, context: editedContext })
+        body: JSON.stringify({ project_id: id, instructions: editedInstructions })
       });
       
       if (!response.ok) {
@@ -134,25 +140,31 @@ export default function ProjectDetail() {
       }
       
       const data = await response.json();
-      setProject({ ...project, context: editedContext });
+      setAssistantInfo({ ...assistantInfo, instructions: editedInstructions });
       setIsEditing(false);
-      setToast({ message: 'Context updated successfully', type: 'success' });
+      setToast({ message: 'Instructions updated successfully', type: 'success' });
       
       // Update cache
-      setCache(`cache_project_${id}`, { project: { ...project, context: editedContext } });
+      const cachedData = getCache<any>(`cache_project_${id}`);
+      if (cachedData) {
+        setCache(`cache_project_${id}`, { 
+          ...cachedData, 
+          assistant: { ...cachedData.assistant, instructions: editedInstructions } 
+        });
+      }
       
       // Invalidate dashboard cache to reflect changes
       localStorage.removeItem('cache_user_dashboard');
     } catch (error) {
-      console.error('Error updating context:', error);
-      setToast({ message: error instanceof Error ? error.message : 'Failed to update context', type: 'error' });
+      console.error('Error updating instructions:', error);
+      setToast({ message: error instanceof Error ? error.message : 'Failed to update instructions', type: 'error' });
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleCancelEdit = () => {
-    setEditedContext(project.context || '');
+    setEditedInstructions(assistantInfo?.instructions || '');
     setIsEditing(false);
   };
 
@@ -274,7 +286,7 @@ export default function ProjectDetail() {
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl hover-scale">
+        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
               {project.project_name}
@@ -293,6 +305,13 @@ export default function ProjectDetail() {
                   <span className="font-semibold text-white/70">Created:</span> {
                     format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
                   }
+                </p>
+              )}
+
+              {/* Affichage du modèle de l'assistant */}
+              {assistantInfo?.model && (
+                <p>
+                  <span className="font-semibold text-white/70">AI Model:</span> {assistantInfo.model}
                 </p>
               )}
               
@@ -343,18 +362,18 @@ export default function ProjectDetail() {
             
             <div>
               <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-white/70">Context:</span>
+                <span className="font-semibold text-white/70">Assistant Instructions:</span>
                 {!isEditing ? (
                   <button 
                     onClick={() => setIsEditing(true)}
                     className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
                   >
-                    Edit Context
+                    Edit Instructions
                   </button>
                 ) : (
                   <div className="space-x-2">
                     <button 
-                      onClick={handleSaveContext}
+                      onClick={handleSaveInstructions}
                       disabled={isUpdating}
                       className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
                     >
@@ -372,16 +391,19 @@ export default function ProjectDetail() {
               
               {isEditing ? (
                 <textarea 
-                  value={editedContext}
-                  onChange={(e) => setEditedContext(e.target.value)}
-                  className="w-full h-32 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
-                  placeholder="Enter context for this project..."
+                  value={editedInstructions}
+                  onChange={(e) => setEditedInstructions(e.target.value)}
+                  className="w-full h-48 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
+                  placeholder="Enter instructions for the AI assistant..."
                 />
               ) : (
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-32 overflow-auto">
-                  <p className="text-sm">{project.context || 'No context provided'}</p>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-48 overflow-auto">
+                  <p className="text-sm whitespace-pre-wrap">{assistantInfo?.instructions || 'No instructions provided'}</p>
                 </div>
               )}
+              <p className="text-xs text-white/50 mt-1 italic">
+                These instructions guide how the AI assistant interacts with users and what information it provides.
+              </p>
             </div>
           </div>
         </div>

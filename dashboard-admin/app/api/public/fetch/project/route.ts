@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { currentUser } from '@clerk/nextjs/server';
 import { auth } from '@clerk/nextjs/server';
+import { getAssistant } from '@/lib/vector-store-utils';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -67,14 +68,28 @@ export async function GET(request: Request) {
     // Fetch assistant info
     const { data: assistantData } = await supabase
       .from('assistants')
-      .select('openai_assistant_id')
+      .select('openai_assistant_id, model')
       .eq('project_id', projectId)
       .single();
+
+    // Si un assistant existe, récupérer ses instructions depuis l'API OpenAI
+    let assistantDetails = null;
+    if (assistantData?.openai_assistant_id) {
+      try {
+        assistantDetails = await getAssistant(assistantData.openai_assistant_id);
+      } catch (error) {
+        console.error('Error fetching assistant details:', error);
+      }
+    }
 
     return NextResponse.json({
       project: projectData,
       vectorStoreId: vectorStoreData?.openai_vector_id || null,
-      assistantId: assistantData?.openai_assistant_id || null
+      assistantId: assistantData?.openai_assistant_id || null,
+      assistant: assistantDetails ? {
+        instructions: assistantDetails.instructions,
+        model: assistantDetails.model
+      } : null
     });
 
   } catch (error) {

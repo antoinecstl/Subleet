@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
 import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
+import { SUPPORTED_MODELS } from '@/lib/constants';
 
 interface VectorFile {
   id: string;
@@ -24,8 +25,13 @@ export default function AdminProjectDetail() {
   const [toastVisible, setToastVisible] = useState(false);
   const [clientInfo, setClientInfo] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [isEditingContext, setIsEditingContext] = useState(false);
-  const [editedContext, setEditedContext] = useState('');
+  
+  // États pour l'assistant
+  const [assistantInfo, setAssistantInfo] = useState<any>(null);
+  const [isEditingInstructions, setIsEditingInstructions] = useState(false);
+  const [editedInstructions, setEditedInstructions] = useState('');
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [isModelChangeOpen, setIsModelChangeOpen] = useState(false);
   
   // États pour Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
@@ -37,6 +43,9 @@ export default function AdminProjectDetail() {
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
+  const [isEditingContext, setIsEditingContext] = useState(false);
+  const [editedContext, setEditedContext] = useState('');
+
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
       try {
@@ -45,6 +54,10 @@ export default function AdminProjectDetail() {
           if (cachedData) {
             setProject(cachedData.project);
             setClientInfo(cachedData.clientInfo);
+            setAssistantInfo(cachedData.assistant || null);
+            setSelectedModel(cachedData.assistant?.model || '');
+            setEditedInstructions(cachedData.assistant?.instructions || '');
+            setEditedContext(cachedData.project?.context || '');
             setVectorStoreId(cachedData.vectorStoreId || null);
             setAssistantId(cachedData.assistantId || null);
             setLoading(false);
@@ -61,6 +74,10 @@ export default function AdminProjectDetail() {
         } else {
           setProject(data.project);
           setClientInfo(data.clientInfo || null);
+          setAssistantInfo(data.assistant || null);
+          setSelectedModel(data.assistant?.model || '');
+          setEditedInstructions(data.assistant?.instructions || '');
+          setEditedContext(data.project?.context || '');
           setVectorStoreId(data.vectorStoreId || null);
           setAssistantId(data.assistantId || null);
           
@@ -137,7 +154,10 @@ export default function AdminProjectDetail() {
       // After successful toggle, update cache
       setCache(`cache_admin_project_${id}`, {
         project: { ...project, working: !project.working },
-        clientInfo
+        clientInfo,
+        assistant: assistantInfo,
+        vectorStoreId,
+        assistantId
       });
       // Also invalidate the client cache since project status changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
@@ -149,47 +169,104 @@ export default function AdminProjectDetail() {
     }
   };
 
-  const startEditingContext = () => {
-    setEditedContext(project.context || '');
-    setIsEditingContext(true);
+  const startEditingInstructions = () => {
+    setEditedInstructions(assistantInfo?.instructions || '');
+    setIsEditingInstructions(true);
   };
 
-  const cancelEditingContext = () => {
-    setIsEditingContext(false);
-    setEditedContext('');
+  const cancelEditingInstructions = () => {
+    setIsEditingInstructions(false);
+    setEditedInstructions(assistantInfo?.instructions || '');
   };
 
-  const saveContextChanges = async () => {
-    if (!project || isUpdating) return;
+  const saveInstructionsChanges = async () => {
+    if (!assistantId || isUpdating) return;
     
     setIsUpdating(true);
     try {
-      const response = await fetch('/api/admin/projects/update', {
+      const response = await fetch('/api/admin/assistants/update', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           project_id: project.project_id, 
-          context: editedContext 
+          instructions: editedInstructions 
         })
       });
       
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update project context');
+        throw new Error(data.error || 'Failed to update assistant instructions');
       }
       
-      const updatedProject = { ...project, context: editedContext };
-      setProject(updatedProject);
-      setToast({ message: 'Project context updated successfully', type: 'success' });
-      setIsEditingContext(false);
+      setAssistantInfo({
+        ...assistantInfo,
+        instructions: data.assistant.instructions
+      });
+      setToast({ message: 'Assistant instructions updated successfully', type: 'success' });
+      setIsEditingInstructions(false);
       
       // Update cache
-      setCache(`cache_admin_project_${id}`, {
-        project: updatedProject,
-        clientInfo
+      const cachedData = getCache<any>(`cache_admin_project_${id}`);
+      if (cachedData) {
+        setCache(`cache_admin_project_${id}`, {
+          ...cachedData,
+          assistant: {
+            ...cachedData.assistant,
+            instructions: data.assistant.instructions
+          }
+        });
+      }
+      
+      // Also invalidate the client cache since instructions changed
+      localStorage.removeItem(`cache_client_${project.project_owner}`);
+      localStorage.removeItem(`cache_project_${id}`);
+      
+    } catch (err: any) {
+      setToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const updateModel = async () => {
+    if (!assistantId || isUpdating || !selectedModel) return;
+    
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/assistants/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          project_id: project.project_id, 
+          model: selectedModel 
+        })
       });
       
-      // Also invalidate the client cache since project context changed
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update assistant model');
+      }
+      
+      setAssistantInfo({
+        ...assistantInfo,
+        model: data.assistant.model
+      });
+      setToast({ message: 'Assistant model updated successfully', type: 'success' });
+      setIsModelChangeOpen(false);
+      
+      // Update cache
+      const cachedData = getCache<any>(`cache_admin_project_${id}`);
+      if (cachedData) {
+        setCache(`cache_admin_project_${id}`, {
+          ...cachedData,
+          assistant: {
+            ...cachedData.assistant,
+            model: data.assistant.model
+          }
+        });
+      }
+      
+      // Also invalidate the client cache since model changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       localStorage.removeItem(`cache_project_${id}`);
       
@@ -281,6 +358,65 @@ export default function AdminProjectDetail() {
       });
   };
 
+  const startEditingContext = () => {
+    setEditedContext(project?.context || '');
+    setIsEditingContext(true);
+  };
+
+  const cancelEditingContext = () => {
+    setIsEditingContext(false);
+    setEditedContext(project?.context || '');
+  };
+
+  const saveContextChanges = async () => {
+    if (!project || isUpdating) return;
+    
+    setIsUpdating(true);
+    try {
+      const response = await fetch('/api/admin/projects/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          project_id: project.project_id, 
+          context: editedContext 
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update project context');
+      }
+      
+      setProject({
+        ...project,
+        context: editedContext
+      });
+      setToast({ message: 'Project context updated successfully', type: 'success' });
+      setIsEditingContext(false);
+      
+      // Update cache
+      const cachedData = getCache<any>(`cache_admin_project_${id}`);
+      if (cachedData) {
+        setCache(`cache_admin_project_${id}`, {
+          ...cachedData,
+          project: {
+            ...cachedData.project,
+            context: editedContext
+          }
+        });
+      }
+      
+      // Also invalidate the client cache
+      localStorage.removeItem(`cache_client_${project.project_owner}`);
+      localStorage.removeItem(`cache_project_${id}`);
+      
+    } catch (err: any) {
+      setToast({ message: err.message, type: 'error' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -318,7 +454,7 @@ export default function AdminProjectDetail() {
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl hover-scale">
+        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl">
           <div className="flex justify-between items-start mb-6">
             <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">{project.project_name}</h1>
             <button 
@@ -366,6 +502,63 @@ export default function AdminProjectDetail() {
                 </p>
               )}
               
+              {/* Section modèle AI */}
+              {assistantInfo?.model && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white/70">AI Model:</span>
+                    <button 
+                      onClick={() => setIsModelChangeOpen(true)}
+                      className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white transition duration-300 transform hover:scale-105"
+                    >
+                      Change Model
+                    </button>
+                  </div>
+                  <div className="mt-2 px-3 py-2 bg-gray-800/50 rounded-lg border border-white/10">
+                    <p className="text-blue-300">{assistantInfo.model}</p>
+                  </div>
+                  
+                  {/* Modal pour changer le modèle */}
+                  {isModelChangeOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                      <div className="w-full max-w-md p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-white/10 shadow-2xl">
+                        <h3 className="text-xl font-semibold mb-4 text-white">Change AI Model</h3>
+                        <div className="mb-5">
+                          <label className="block text-white/70 mb-2">Select Model</label>
+                          <select 
+                            value={selectedModel}
+                            onChange={(e) => setSelectedModel(e.target.value)}
+                            className="w-full p-3 bg-gray-800 text-white rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            {SUPPORTED_MODELS.map(model => (
+                              <option key={model} value={model}>{model}</option>
+                            ))}
+                          </select>
+                          <p className="text-xs mt-2 text-white/50">
+                            Changing the model may affect the AI's capabilities and performance.
+                          </p>
+                        </div>
+                        <div className="flex justify-end gap-3">
+                          <button 
+                            onClick={() => setIsModelChangeOpen(false)}
+                            className="px-4 py-2 border border-white/20 hover:bg-white/10 rounded-lg text-white transition duration-300"
+                          >
+                            Cancel
+                          </button>
+                          <button 
+                            onClick={updateModel}
+                            disabled={isUpdating || selectedModel === assistantInfo.model}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg text-white transition duration-300 disabled:opacity-50"
+                          >
+                            {isUpdating ? 'Updating...' : 'Update Model'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {/* Affichage Vector Store ID */}
               {vectorStoreId && (
                 <div className="mt-2">
@@ -410,25 +603,25 @@ export default function AdminProjectDetail() {
             
             <div>
               <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-white/70">Context:</span>
-                {!isEditingContext ? (
+                <span className="font-semibold text-white/70">Assistant Instructions:</span>
+                {!isEditingInstructions ? (
                   <button 
-                    onClick={startEditingContext}
+                    onClick={startEditingInstructions}
                     className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
                   >
-                    Edit Context
+                    Edit Instructions
                   </button>
                 ) : (
                   <div className="space-x-2">
                     <button 
-                      onClick={saveContextChanges}
+                      onClick={saveInstructionsChanges}
                       disabled={isUpdating}
                       className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
                     >
                       {isUpdating ? 'Saving...' : 'Save'}
                     </button>
                     <button 
-                      onClick={cancelEditingContext}
+                      onClick={cancelEditingInstructions}
                       className="px-3 py-1.5 border border-white/20 hover:bg-white/10 rounded-full text-white text-sm transition duration-300"
                     >
                       Cancel
@@ -437,18 +630,21 @@ export default function AdminProjectDetail() {
                 )}
               </div>
               
-              {isEditingContext ? (
+              {isEditingInstructions ? (
                 <textarea 
-                  value={editedContext}
-                  onChange={(e) => setEditedContext(e.target.value)}
-                  className="w-full h-32 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
-                  placeholder="Enter context for this project..."
+                  value={editedInstructions}
+                  onChange={(e) => setEditedInstructions(e.target.value)}
+                  className="w-full h-64 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
+                  placeholder="Enter instructions for the AI assistant..."
                 />
               ) : (
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-32 overflow-auto">
-                  <p className="text-sm">{project.context || 'No context provided'}</p>
+                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-64 overflow-auto">
+                  <p className="text-sm whitespace-pre-wrap">{assistantInfo?.instructions || 'No instructions provided'}</p>
                 </div>
               )}
+              <p className="text-xs text-white/50 mt-1 italic">
+                Ces instructions guident l'assistant AI dans ses interactions avec les utilisateurs.
+              </p>
             </div>
           </div>
         </div>
