@@ -6,7 +6,6 @@ import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
 import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
-import { SUPPORTED_MODELS } from '@/lib/constants';
 
 interface VectorFile {
   id: string;
@@ -26,14 +25,14 @@ export default function AdminProjectDetail() {
   const [clientInfo, setClientInfo] = useState<any>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
-  // États pour l'assistant
+  // States for assistant
   const [assistantInfo, setAssistantInfo] = useState<any>(null);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editedInstructions, setEditedInstructions] = useState('');
   const [selectedModel, setSelectedModel] = useState<string>('');
   const [isModelChangeOpen, setIsModelChangeOpen] = useState(false);
   
-  // États pour Vector Store
+  // States for Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -49,13 +48,13 @@ export default function AdminProjectDetail() {
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
       try {
+        setLoading(true);
         if (!bypassCache) {
           const cachedData = getCache<any>(`cache_admin_project_${id}`);
           if (cachedData) {
             setProject(cachedData.project);
             setClientInfo(cachedData.clientInfo);
-            setAssistantInfo(cachedData.assistant || null);
-            setSelectedModel(cachedData.assistant?.model || '');
+            setAssistantInfo(cachedData.assistant);
             setEditedInstructions(cachedData.assistant?.instructions || '');
             setEditedContext(cachedData.project?.context || '');
             setVectorStoreId(cachedData.vectorStoreId || null);
@@ -69,24 +68,31 @@ export default function AdminProjectDetail() {
         const data = await res.json();
         
         if (data.error) {
-          setToast({ message: data.error, type: 'error' });
-          setProject(null);
+          throw new Error(data.error);
         } else {
           setProject(data.project);
-          setClientInfo(data.clientInfo || null);
+          setClientInfo(data.clientInfo);
           setAssistantInfo(data.assistant || null);
-          setSelectedModel(data.assistant?.model || '');
           setEditedInstructions(data.assistant?.instructions || '');
           setEditedContext(data.project?.context || '');
           setVectorStoreId(data.vectorStoreId || null);
           setAssistantId(data.assistantId || null);
           
-          // Cache the data
-          setCache(`cache_admin_project_${id}`, data);
+          // Cache the result
+          setCache(`cache_admin_project_${id}`, {
+            project: data.project,
+            clientInfo: data.clientInfo,
+            assistant: data.assistant,
+            vectorStoreId: data.vectorStoreId,
+            assistantId: data.assistantId
+          });
         }
       } catch (error) {
-        console.error(error);
-        setToast({ message: 'Failed to load project data', type: 'error' });
+        console.error('Error fetching project data:', error);
+        setToast({ 
+          message: error instanceof Error ? error.message : 'Failed to load project data', 
+          type: 'error' 
+        });
       } finally {
         setLoading(false);
       }
@@ -349,323 +355,282 @@ export default function AdminProjectDetail() {
     navigator.clipboard.writeText(text)
       .then(() => {
         setCopySuccess(true);
-        setToast({ message: 'ID copié dans le presse-papier', type: 'success' });
+        setToast({ message: 'ID copied to clipboard', type: 'success' });
         setTimeout(() => setCopySuccess(false), 2000);
       })
       .catch(err => {
         console.error('Could not copy text: ', err);
-        setToast({ message: 'Échec de la copie', type: 'error' });
+        setToast({ message: 'Copy failed', type: 'error' });
       });
-  };
-
-  const startEditingContext = () => {
-    setEditedContext(project?.context || '');
-    setIsEditingContext(true);
-  };
-
-  const cancelEditingContext = () => {
-    setIsEditingContext(false);
-    setEditedContext(project?.context || '');
-  };
-
-  const saveContextChanges = async () => {
-    if (!project || isUpdating) return;
-    
-    setIsUpdating(true);
-    try {
-      const response = await fetch('/api/admin/projects/update', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          project_id: project.project_id, 
-          context: editedContext 
-        })
-      });
-      
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update project context');
-      }
-      
-      setProject({
-        ...project,
-        context: editedContext
-      });
-      setToast({ message: 'Project context updated successfully', type: 'success' });
-      setIsEditingContext(false);
-      
-      // Update cache
-      const cachedData = getCache<any>(`cache_admin_project_${id}`);
-      if (cachedData) {
-        setCache(`cache_admin_project_${id}`, {
-          ...cachedData,
-          project: {
-            ...cachedData.project,
-            context: editedContext
-          }
-        });
-      }
-      
-      // Also invalidate the client cache
-      localStorage.removeItem(`cache_client_${project.project_owner}`);
-      localStorage.removeItem(`cache_project_${id}`);
-      
-    } catch (err: any) {
-      setToast({ message: err.message, type: 'error' });
-    } finally {
-      setIsUpdating(false);
-    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
   
   if (!project) {
     return (
-      <div className="min-h-screen p-6 bg-background text-foreground">
+      <div className="min-h-screen p-6">
         <button 
           onClick={() => router.back()} 
-          className="mb-4 px-2 py-1 rounded-lg bg-gradient-to-r from-blue-700 to-purple-700 text-white hover:underline"
+          className="btn-gradient px-6 py-2 mb-6"
         >
           &larr; Back
         </button>
-        <p className="text-center text-red-500">Project not found.</p>
+        <div className="alert alert-error">Project not found</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 bg-background text-foreground relative overflow-hidden">
+    <div className="min-h-screen p-6 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-500 opacity-5 blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-purple-600 opacity-5 blur-3xl"></div>
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
       
-      <div className="relative z-10 max-w-6xl mx-auto">
+      <div className="relative z-10 content-container">
         <button 
-          onClick={() => router.back()} 
-          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+          onClick={() => router.push(`/dashboard-admin/client/${project.project_owner}`)} 
+          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
         >
-          &larr; <span>Back</span>
+          &larr; <span>Back to Client</span>
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl">
-          <div className="flex justify-between items-start mb-6">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">{project.project_name}</h1>
-            <button 
-              onClick={toggleProjectStatus}
-              disabled={isUpdating}
-              className={`px-4 py-2 rounded-full shadow-lg transition duration-300 transform hover:scale-105 ${project.working 
-                ? 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600' 
-                : 'bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600'} text-white`}
-            >
-              {isUpdating ? 'Updating...' : project.working ? 'Disable Project' : 'Enable Project'}
-            </button>
+        <div className="mb-8 p-8 glass-card rounded-xl">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold mb-0">{project.project_name}</h1>
+            <div className="flex items-center gap-3">
+              <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
+                {project.working ? 'Active' : 'Inactive'}
+              </div>
+              <button 
+                onClick={toggleProjectStatus}
+                disabled={isUpdating}
+                className={`btn-${project.working ? 'error' : 'gradient'} px-4 py-2 rounded-full flex items-center gap-2`}
+              >
+                {isUpdating ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                ) : null}
+                {project.working ? 'Deactivate' : 'Activate'}
+              </button>
+            </div>
           </div>
           
           {clientInfo && (
-            <div className="mb-8 p-6 glass-card rounded-xl border border-white/10">
-              <h3 className="text-xl font-semibold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">Client Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p><span className="font-semibold text-white/70">Name:</span> {clientInfo.name}</p>
-                  <p><span className="font-semibold text-white/70">Email:</span> {clientInfo.email}</p>
+            <div className="p-6 glass-card rounded-xl mb-6">
+              <h3 className="card-header">Client Information</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">Client Name</span>
+                    <span>{clientInfo.name}</span>
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">Client Email</span>
+                    <span>{clientInfo.email}</span>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <p><span className="font-semibold text-white/70">Phone:</span> {clientInfo.phone || 'N/A'}</p>
-                  <p><span className="font-semibold text-white/70">Registration:</span> {clientInfo.creation_date ? 
-                    format(new Date(clientInfo.creation_date), 'dd/MM/yyyy') : 'N/A'}</p>
+                <div className="space-y-3">
+                  {clientInfo.phone && (
+                    <div>
+                      <span className="text-sm font-semibold text-muted block mb-1">Phone</span>
+                      <span>{clientInfo.phone}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <span className="font-semibold text-white/70 mr-2">Status:</span> 
-                <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
-                  {project.working ? 'Active' : 'Inactive'}
-                </span>
+          {/* Project details section */}
+          <div className="p-6 glass-card rounded-xl mb-6">
+            <h3 className="card-header">Project Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-mono bg-card-bg px-2 py-1 rounded">{project.project_id}</span>
+                    <button 
+                      onClick={() => copyToClipboard(project.project_id)}
+                      className={`p-1.5 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    >
+                      <FaCopy size={14} />
+                    </button>
+                  </div>
+                </div>
+                {project.creation_timestamp && (
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
+                    <span>{new Date(project.creation_timestamp).toLocaleDateString()}</span>
+                  </div>
+                )}
               </div>
-              <p><span className="font-semibold text-white/70">Total API Calls:</span> {project.total_call}</p>
-              {project.creation_timestamp && (
-                <p>
-                  <span className="font-semibold text-white/70">Created:</span> {
-                    format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
-                  }
-                </p>
-              )}
-              
-              {/* Section modèle AI */}
-              {assistantInfo?.model && (
-                <div className="mt-4">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-white/70">AI Model:</span>
-                    <button 
-                      onClick={() => setIsModelChangeOpen(true)}
-                      className="px-3 py-1.5 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white transition duration-300 transform hover:scale-105"
-                    >
-                      Change Model
-                    </button>
-                  </div>
-                  <div className="mt-2 px-3 py-2 bg-gray-800/50 rounded-lg border border-white/10">
-                    <p className="text-blue-300">{assistantInfo.model}</p>
-                  </div>
-                  
-                  {/* Modal pour changer le modèle */}
-                  {isModelChangeOpen && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                      <div className="w-full max-w-md p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl border border-white/10 shadow-2xl">
-                        <h3 className="text-xl font-semibold mb-4 text-white">Change AI Model</h3>
-                        <div className="mb-5">
-                          <label className="block text-white/70 mb-2">Select Model</label>
-                          <select 
-                            value={selectedModel}
-                            onChange={(e) => setSelectedModel(e.target.value)}
-                            className="w-full p-3 bg-gray-800 text-white rounded-lg border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            {SUPPORTED_MODELS.map(model => (
-                              <option key={model} value={model}>{model}</option>
-                            ))}
-                          </select>
-                          <p className="text-xs mt-2 text-white/50">
-                            Changing the model may affect the AI's capabilities and performance.
-                          </p>
-                        </div>
-                        <div className="flex justify-end gap-3">
-                          <button 
-                            onClick={() => setIsModelChangeOpen(false)}
-                            className="px-4 py-2 border border-white/20 hover:bg-white/10 rounded-lg text-white transition duration-300"
-                          >
-                            Cancel
-                          </button>
-                          <button 
-                            onClick={updateModel}
-                            disabled={isUpdating || selectedModel === assistantInfo.model}
-                            className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg text-white transition duration-300 disabled:opacity-50"
-                          >
-                            {isUpdating ? 'Updating...' : 'Update Model'}
-                          </button>
-                        </div>
-                      </div>
+              <div className="space-y-3">
+                {assistantInfo?.model && (
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">AI Model</span>
+                    <div className="flex items-center gap-3">
+                      <span>{assistantInfo.model}</span>
+                      <button 
+                        onClick={() => setIsModelChangeOpen(true)}
+                        className="text-xs px-2 py-1 btn-outline rounded-full"
+                      >
+                        Change
+                      </button>
                     </div>
-                  )}
-                </div>
-              )}
-              
-              {/* Affichage Vector Store ID */}
-              {vectorStoreId && (
-                <div className="mt-2">
-                  <p className="font-semibold text-white/70 mb-1">Vector Store ID:</p>
-                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
-                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                      {vectorStoreId}
-                    </code>
-                    <button 
-                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
-                      onClick={() => copyToClipboard(vectorStoreId)}
-                      title="Copier l'ID"
-                    >
-                      <FaCopy size={14} />
-                    </button>
                   </div>
+                )}
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Status</span>
+                  <span className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
+                    {project.working ? 'Active' : 'Inactive'}
+                  </span>
                 </div>
-              )}
-              
-              {/* Affichage Assistant ID */}
-              {assistantId && (
-                <div className="mt-4">
-                  <p className="font-semibold text-white/70 mb-1">Assistant ID:</p>
-                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
-                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                      {assistantId}
-                    </code>
-                    <button 
-                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
-                      onClick={() => copyToClipboard(assistantId)}
-                      title="Copier l'ID"
-                    >
-                      <FaCopy size={14} />
-                    </button>
-                  </div>
-                  <p className="text-xs text-white/50 mt-1">
-                    Cet ID est nécessaire pour utiliser l'assistant dans le chatbot
-                  </p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Instructions section */}
+          <div className="p-6 glass-card rounded-xl mb-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="card-header mb-0">
+                Assistant Instructions
+              </h3>
+              {!isEditingInstructions ? (
+                <button 
+                  onClick={startEditingInstructions}
+                  className="btn-outline px-4 py-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  Edit
+                </button>
+              ) : (
+                <div className="space-x-2">
+                  <button 
+                    onClick={saveInstructionsChanges}
+                    disabled={isUpdating}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-4 py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                  <button 
+                    onClick={cancelEditingInstructions}
+                    className="btn-ghost px-4 py-2 border border-card-border"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Cancel
+                  </button>
                 </div>
               )}
             </div>
             
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-white/70">Assistant Instructions:</span>
-                {!isEditingInstructions ? (
-                  <button 
-                    onClick={startEditingInstructions}
-                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
-                  >
-                    Edit Instructions
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button 
-                      onClick={saveInstructionsChanges}
-                      disabled={isUpdating}
-                      className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
-                    >
-                      {isUpdating ? 'Saving...' : 'Save'}
-                    </button>
-                    <button 
-                      onClick={cancelEditingInstructions}
-                      className="px-3 py-1.5 border border-white/20 hover:bg-white/10 rounded-full text-white text-sm transition duration-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              {isEditingInstructions ? (
+            {isEditingInstructions ? (
+              <div className="space-y-2">
                 <textarea 
                   value={editedInstructions}
                   onChange={(e) => setEditedInstructions(e.target.value)}
-                  className="w-full h-64 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
+                  className="input-field min-h-[250px] resize-vertical"
                   placeholder="Enter instructions for the AI assistant..."
                 />
-              ) : (
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-64 overflow-auto">
-                  <p className="text-sm whitespace-pre-wrap">{assistantInfo?.instructions || 'No instructions provided'}</p>
+                <p className="text-xs text-muted italic">
+                  These instructions guide the AI in its interactions with users. Be precise and detailed for better results.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="p-5 rounded-xl bg-card-bg border border-card-border min-h-[200px] max-h-[400px] overflow-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{assistantInfo?.instructions || 'No instructions provided for this assistant.'}</p>
                 </div>
-              )}
-              <p className="text-xs text-white/50 mt-1 italic">
-                Ces instructions guident l'assistant AI dans ses interactions avec les utilisateurs.
-              </p>
-            </div>
+                <p className="text-xs text-muted mt-3 italic">
+                  These instructions guide the AI in its interactions with users.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Important IDs section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Vector Store ID */}
+            {vectorStoreId && (
+              <div className="p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header">
+                  Vector Store ID
+                </h3>
+                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                    {vectorStoreId}
+                  </code>
+                  <button 
+                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    onClick={() => copyToClipboard(vectorStoreId)}
+                    title="Copy ID"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-3">
+                  This identifier is needed to integrate RAG functionality into your chatbot.
+                </p>
+              </div>
+            )}
+            
+            {/* Assistant ID */}
+            {assistantId && (
+              <div className="p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header">
+                  Assistant ID
+                </h3>
+                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                    {assistantId}
+                  </code>
+                  <button 
+                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    onClick={() => copyToClipboard(assistantId)}
+                    title="Copy ID"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-3">
+                  Use this identifier to connect your application to the AI chat service.
+                </p>
+              </div>
+            )}
           </div>
         </div>
-
+        
         {/* Vector Store Files Section */}
-        <div className="p-8 glass-card rounded-xl border border-white/10 shadow-xl mb-8">
+        <div className="p-8 glass-card rounded-xl mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
-              Vector Store Files
+            <h2 className="card-header text-xl mb-0">
+              Reference Documents
             </h2>
             <button 
               onClick={fetchVectorFiles}
-              className="p-2 rounded-full hover:bg-white/10 transition"
+              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300"
               disabled={loadingFiles}
+              title="Refresh list"
             >
-              <FaSync className={`text-blue-400 ${loadingFiles ? 'animate-spin' : ''}`} />
+              <FaSync className={`text-primary ${loadingFiles ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
-          <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+          <div className="mb-6 p-5 rounded-xl bg-card-bg border border-card-border">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
               <div className="flex-grow w-full">
                 <input
                   type="file"
@@ -673,9 +638,9 @@ export default function AdminProjectDetail() {
                   className="w-full text-sm file:mr-4 file:py-2 file:px-4
                     file:rounded-full file:border-0
                     file:text-sm file:font-semibold file:cursor-pointer
-                    file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:text-white
-                    hover:file:from-blue-700 hover:file:to-purple-700
-                    text-white/70 cursor-pointer"
+                    file:bg-gradient-to-r file:from-primary file:to-secondary file:text-white
+                    hover:file:from-[var(--button-hover-from)] hover:file:to-[var(--button-hover-to)]
+                    cursor-pointer"
                   accept=".txt,.md,.pdf,.csv,.json,.html,.htm"
                   ref={fileInputRef}
                 />
@@ -683,51 +648,52 @@ export default function AdminProjectDetail() {
               <button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || isUploading}
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition transform hover:scale-105 flex items-center gap-2 w-full sm:w-auto justify-center"
+                className="btn-gradient px-5 py-2 flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 <FaUpload />
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
-            <p className="text-xs text-white/50">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
+            <p className="text-xs text-muted">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
+            <p className="text-xs text-muted mt-1">These documents feed your AI assistant's knowledge base.</p>
           </div>
 
           {loadingFiles ? (
             <div className="flex justify-center items-center p-8">
-              <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : vectorFiles.length > 0 ? (
-            <div className="overflow-hidden rounded-xl bg-white/5 border border-white/10">
-              <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-blue-800/50 to-purple-800/50">
+            <div className="overflow-hidden rounded-xl bg-card-bg border border-card-border">
+              <table className="table-modern min-w-full">
+                <thead>
                   <tr>
-                    <th className="py-3 px-4 text-left font-semibold">Filename</th>
-                    <th className="py-3 px-4 text-center font-semibold">Size</th>
-                    <th className="py-3 px-4 text-center font-semibold">Date</th>
-                    <th className="py-3 px-4 text-center font-semibold">Actions</th>
+                    <th>File Name</th>
+                    <th className="text-center">Size</th>
+                    <th className="text-center">Date</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {vectorFiles.map((file, index) => (
                     <tr 
                       key={file.id} 
-                      className={`transition-colors duration-150 hover:bg-white/5 ${index !== vectorFiles.length-1 ? 'border-b border-white/10' : ''}`}
+                      className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
                     >
-                      <td className="py-3 px-4 text-left">
+                      <td>
                         <div className="flex items-center gap-2">
-                          <FaFileAlt className="text-blue-400" />
+                          <FaFileAlt className="text-primary" />
                           {file.filename}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-center">{formatFileSize(file.size)}</td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="text-center">{formatFileSize(file.size)}</td>
+                      <td className="text-center">
                         {new Date(file.created_at).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="text-center">
                         <button
                           onClick={() => handleDeleteFile(file.id)}
-                          className="p-2 rounded-full hover:bg-red-500/20 text-red-400 transition"
-                          title="Delete file"
+                          className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
+                          title="Delete"
                         >
                           <FaTrash />
                         </button>
@@ -738,14 +704,56 @@ export default function AdminProjectDetail() {
               </table>
             </div>
           ) : (
-            <div className="text-center p-8 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-white/50">No files have been uploaded to the Vector Store yet.</p>
-              <p className="text-sm text-white/30 mt-2">Upload files to enable RAG capabilities for this project.</p>
+            <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
+              <p className="text-muted">No files have been added to the knowledge base yet.</p>
+              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant's capabilities.</p>
             </div>
           )}
         </div>
       </div>
 
+      {/* Modal for changing AI model */}
+      {isModelChangeOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
+          <div className="glass-card p-8 rounded-xl w-96 border border-card-border animate-fadeIn">
+            <h2 className="card-header text-2xl mb-6">Change AI Model</h2>
+            <div className="mb-6">
+              <label className="form-label mb-2">Select Model</label>
+              <select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                className="input-field"
+              >
+                <option value="">Select a model...</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              </select>
+              <p className="text-xs text-muted mt-2">
+                Different models have different capabilities and pricing. Choose the one that best fits your needs.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsModelChangeOpen(false)}
+                className="btn-ghost px-4 py-2"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={updateModel}
+                disabled={!selectedModel || isUpdating}
+                className="btn-gradient px-4 py-2"
+              >
+                {isUpdating ? 'Updating...' : 'Update Model'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast notification */}
       {toast && (
         <Toast 
           message={toast.message} 

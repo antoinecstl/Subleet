@@ -26,10 +26,10 @@ export default function ProjectDetail() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   
-  // États pour l'assistant
+  // States for assistant
   const [assistantInfo, setAssistantInfo] = useState<any>(null);
   
-  // États pour Vector Store
+  // States for Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -240,191 +240,230 @@ export default function ProjectDetail() {
     navigator.clipboard.writeText(text)
       .then(() => {
         setCopySuccess(true);
-        setToast({ message: 'ID copié dans le presse-papier', type: 'success' });
+        setToast({ message: 'ID copied to clipboard', type: 'success' });
         setTimeout(() => setCopySuccess(false), 2000);
       })
       .catch(err => {
         console.error('Could not copy text: ', err);
-        setToast({ message: 'Échec de la copie', type: 'error' });
+        setToast({ message: 'Copy failed', type: 'error' });
       });
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
   
   if (!project) {
     return (
-      <div className="min-h-screen p-6 bg-background text-foreground">
+      <div className="min-h-screen p-6">
         <button 
           onClick={() => router.back()} 
-          className="mb-4 px-2 py-1 rounded-lg bg-gradient-to-r from-blue-700 to-purple-700 text-white hover:underline"
+          className="btn-gradient px-6 py-2 mb-6"
         >
           &larr; Back
         </button>
-        <p className="text-center text-red-500">Project not found.</p>
+        <div className="alert alert-error">Project not found.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 bg-background text-foreground relative overflow-hidden">
+    <div className="min-h-screen p-6 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-blue-500 opacity-5 blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-purple-600 opacity-5 blur-3xl"></div>
+      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
       
-      <div className="relative z-10 max-w-6xl mx-auto">
+      <div className="relative z-10 content-container">
         <button 
           onClick={() => router.back()} 
-          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-blue-500/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
         >
           &larr; <span>Back</span>
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl border border-white/10 shadow-xl">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
+        <div className="mb-8 p-8 glass-card rounded-xl">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold card-header m-0">
               {project.project_name}
             </h1>
-            <div className={`px-3 py-1.5 rounded-full text-sm font-medium ${project.working ? 'bg-green-500/20 text-green-400 border border-green-500/50' : 'bg-red-500/20 text-red-400 border border-red-500/50'}`}>
+            <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
               {project.working ? 'Active' : 'Inactive'}
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <p><span className="font-semibold text-white/70">Project ID:</span> {project.project_id}</p>
-              <p><span className="font-semibold text-white/70">Total API Calls:</span> {project.total_call}</p>
-              {project.creation_timestamp && (
-                <p>
-                  <span className="font-semibold text-white/70">Created:</span> {
-                    format(new Date(project.creation_timestamp), 'dd/MM/yyyy')
-                  }
-                </p>
-              )}
-
-              {/* Affichage du modèle de l'assistant */}
-              {assistantInfo?.model && (
-                <p>
-                  <span className="font-semibold text-white/70">AI Model:</span> {assistantInfo.model}
-                </p>
-              )}
-              
-              {/* Affichage du Vector Store ID */}
-              {vectorStoreId && (
-                <div className="mt-2">
-                  <p className="font-semibold text-white/70 mb-1">Vector Store ID:</p>
-                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
-                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                      {vectorStoreId}
-                    </code>
-                    <button 
-                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
-                      onClick={() => copyToClipboard(vectorStoreId)}
-                      title="Copier l'ID"
-                    >
-                      <FaCopy size={14} />
-                    </button>
-                  </div>
-                  <p className="text-xs text-white/50 mt-1">
-                    Cet ID est nécessaire pour le chatbot RAG
-                  </p>
+          {/* Project details section */}
+          <div className="p-6 glass-card rounded-xl mb-6">
+            <h3 className="card-header">Project Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>
+                  <span>{project.project_id}</span>
                 </div>
-              )}
-              
-              {/* Ajout de l'affichage de l'Assistant ID */}
-              {assistantId && (
-                <div className="mt-4">
-                  <p className="font-semibold text-white/70 mb-1">Assistant ID:</p>
-                  <div className="flex items-center gap-2 bg-gray-800/50 px-3 py-2 rounded-lg border border-white/10 max-w-full overflow-hidden">
-                    <code className="text-sm text-blue-300 overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                      {assistantId}
-                    </code>
-                    <button 
-                      className={`p-1.5 rounded-full hover:bg-gray-700 transition-colors ${copySuccess ? 'text-green-400' : 'text-white/70'}`} 
-                      onClick={() => copyToClipboard(assistantId)}
-                      title="Copier l'ID"
-                    >
-                      <FaCopy size={14} />
-                    </button>
+                {project.creation_timestamp && (
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
+                    <span>{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
                   </div>
-                  <p className="text-xs text-white/50 mt-1">
-                    Cet ID est nécessaire pour utiliser l'assistant dans votre chatbot
-                  </p>
+                )}
+              </div>
+              <div className="space-y-3">
+                {assistantInfo?.model && (
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">AI Model</span>
+                    <span>{assistantInfo.model}</span>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Status</span>
+                  <span className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
+                    {project.working ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Important IDs section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Vector Store ID */}
+            {vectorStoreId && (
+              <div className="p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header">
+                  Vector Store ID
+                </h3>
+                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                    {vectorStoreId}
+                  </code>
+                  <button 
+                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    onClick={() => copyToClipboard(vectorStoreId)}
+                    title="Copy ID"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-3">
+                  This identifier is needed to integrate RAG functionality into your chatbot.
+                </p>
+              </div>
+            )}
+            
+            {/* Assistant ID */}
+            {assistantId && (
+              <div className="p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header">
+                  Assistant ID
+                </h3>
+                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                    {assistantId}
+                  </code>
+                  <button 
+                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    onClick={() => copyToClipboard(assistantId)}
+                    title="Copy ID"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-3">
+                  Use this identifier to connect your application to the AI chat service.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Instructions section */}
+          <div className="p-6 glass-card rounded-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="card-header mb-0">
+                Assistant Instructions
+              </h3>
+              {!isEditing ? (
+                <button 
+                  onClick={() => setIsEditing(true)}
+                  className="btn-gradient px-4 py-2"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  Edit
+                </button>
+              ) : (
+                <div className="space-x-2">
+                  <button 
+                    onClick={handleSaveInstructions}
+                    disabled={isUpdating}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-4 py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {isUpdating ? 'Saving...' : 'Save'}
+                  </button>
+                  <button 
+                    onClick={handleCancelEdit}
+                    className="btn-ghost px-4 py-2 border border-card-border"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Cancel
+                  </button>
                 </div>
               )}
             </div>
             
-            <div>
-              <div className="flex justify-between items-center mb-3">
-                <span className="font-semibold text-white/70">Assistant Instructions:</span>
-                {!isEditing ? (
-                  <button 
-                    onClick={() => setIsEditing(true)}
-                    className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
-                  >
-                    Edit Instructions
-                  </button>
-                ) : (
-                  <div className="space-x-2">
-                    <button 
-                      onClick={handleSaveInstructions}
-                      disabled={isUpdating}
-                      className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-full text-white text-sm transition duration-300 transform hover:scale-105"
-                    >
-                      {isUpdating ? 'Saving...' : 'Save'}
-                    </button>
-                    <button 
-                      onClick={handleCancelEdit}
-                      className="px-3 py-1.5 border border-white/20 hover:bg-white/10 rounded-full text-white text-sm transition duration-300"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              {isEditing ? (
+            {isEditing ? (
+              <div className="space-y-2">
                 <textarea 
                   value={editedInstructions}
                   onChange={(e) => setEditedInstructions(e.target.value)}
-                  className="w-full h-48 p-4 rounded-xl bg-white/10 text-white border border-white/10 focus:border-blue-500 focus:outline-none resize-none"
+                  className="input-field min-h-[250px] resize-vertical"
                   placeholder="Enter instructions for the AI assistant..."
                 />
-              ) : (
-                <div className="p-4 rounded-xl bg-white/5 border border-white/10 h-48 overflow-auto">
-                  <p className="text-sm whitespace-pre-wrap">{assistantInfo?.instructions || 'No instructions provided'}</p>
+                <p className="text-xs text-muted italic">
+                  These instructions guide the AI in its interactions with users. Be precise and detailed for better results.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="p-5 rounded-xl bg-card-bg border border-card-border min-h-[200px] max-h-[400px] overflow-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{assistantInfo?.instructions || 'No instructions provided for this assistant.'}</p>
                 </div>
-              )}
-              <p className="text-xs text-white/50 mt-1 italic">
-                These instructions guide how the AI assistant interacts with users and what information it provides.
-              </p>
-            </div>
+                <p className="text-xs text-muted mt-3 italic">
+                  These instructions guide the AI in its interactions with users.
+                </p>
+              </div>
+            )}
           </div>
         </div>
         
         {/* Vector Store Files Section */}
-        <div className="p-8 glass-card rounded-xl border border-white/10 shadow-xl mb-8">
+        <div className="p-8 glass-card rounded-xl mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-300 to-purple-300">
-              Vector Store Files
+            <h2 className="card-header mb-0">
+              Reference Documents
             </h2>
             <button 
               onClick={fetchVectorFiles}
-              className="p-2 rounded-full hover:bg-white/10 transition"
+              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300"
               disabled={loadingFiles}
+              title="Refresh list"
             >
-              <FaSync className={`text-blue-400 ${loadingFiles ? 'animate-spin' : ''}`} />
+              <FaSync className={`text-primary ${loadingFiles ? 'animate-spin' : ''}`} />
             </button>
           </div>
 
-          <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
-            <div className="flex flex-col sm:flex-row items-center gap-3 mb-2">
+          <div className="mb-6 p-5 rounded-xl bg-card-bg border border-card-border">
+            <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
               <div className="flex-grow w-full">
                 <input
                   type="file"
@@ -432,9 +471,9 @@ export default function ProjectDetail() {
                   className="w-full text-sm file:mr-4 file:py-2 file:px-4
                     file:rounded-full file:border-0
                     file:text-sm file:font-semibold file:cursor-pointer
-                    file:bg-gradient-to-r file:from-blue-600 file:to-purple-600 file:text-white
-                    hover:file:from-blue-700 hover:file:to-purple-700
-                    text-white/70 cursor-pointer"
+                    file:bg-gradient-to-r file:from-primary file:to-secondary file:text-white
+                    hover:file:from-[var(--button-hover-from)] hover:file:to-[var(--button-hover-to)]
+                    cursor-pointer"
                   accept=".txt,.md,.pdf,.csv,.json,.html,.htm"
                   ref={fileInputRef}
                 />
@@ -442,51 +481,52 @@ export default function ProjectDetail() {
               <button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || isUploading}
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition transform hover:scale-105 flex items-center gap-2 w-full sm:w-auto justify-center"
+                className="btn-gradient px-5 py-2 flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 <FaUpload />
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
-            <p className="text-xs text-white/50">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
+            <p className="text-xs text-muted">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
+            <p className="text-xs text-muted mt-1">These documents feed your AI assistant's knowledge base.</p>
           </div>
 
           {loadingFiles ? (
             <div className="flex justify-center items-center p-8">
-              <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : vectorFiles.length > 0 ? (
-            <div className="overflow-hidden rounded-xl bg-white/5 border border-white/10">
-              <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-blue-800/50 to-purple-800/50">
+            <div className="overflow-hidden rounded-xl bg-card-bg border border-card-border">
+              <table className="table-modern min-w-full">
+                <thead>
                   <tr>
-                    <th className="py-3 px-4 text-left font-semibold">Filename</th>
-                    <th className="py-3 px-4 text-center font-semibold">Size</th>
-                    <th className="py-3 px-4 text-center font-semibold">Date</th>
-                    <th className="py-3 px-4 text-center font-semibold">Actions</th>
+                    <th>File Name</th>
+                    <th className="text-center">Size</th>
+                    <th className="text-center">Date</th>
+                    <th className="text-center">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {vectorFiles.map((file, index) => (
                     <tr 
                       key={file.id} 
-                      className={`transition-colors duration-150 hover:bg-white/5 ${index !== vectorFiles.length-1 ? 'border-b border-white/10' : ''}`}
+                      className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
                     >
-                      <td className="py-3 px-4 text-left">
+                      <td>
                         <div className="flex items-center gap-2">
-                          <FaFileAlt className="text-blue-400" />
+                          <FaFileAlt className="text-primary" />
                           {file.filename}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-center">{formatFileSize(file.size)}</td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="text-center">{formatFileSize(file.size)}</td>
+                      <td className="text-center">
                         {new Date(file.created_at).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="text-center">
                         <button
                           onClick={() => handleDeleteFile(file.id)}
-                          className="p-2 rounded-full hover:bg-red-500/20 text-red-400 transition"
-                          title="Delete file"
+                          className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
+                          title="Delete"
                         >
                           <FaTrash />
                         </button>
@@ -497,9 +537,9 @@ export default function ProjectDetail() {
               </table>
             </div>
           ) : (
-            <div className="text-center p-8 rounded-xl bg-white/5 border border-white/10">
-              <p className="text-white/50">No files have been uploaded to the Vector Store yet.</p>
-              <p className="text-sm text-white/30 mt-2">Upload files to enable RAG capabilities for this project.</p>
+            <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
+              <p className="text-muted">No files have been added to the knowledge base yet.</p>
+              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant's capabilities.</p>
             </div>
           )}
         </div>
