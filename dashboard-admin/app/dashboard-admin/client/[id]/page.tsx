@@ -91,8 +91,8 @@ export default function ClientDetail() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          client_id: id,
-          name: newProjectName.trim()
+          project_name: newProjectName.trim(),
+          project_owner: id 
         })
       });
       

@@ -9,7 +9,7 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function POST(request: Request) {
   try {
-    const { project_name, project_owner, instructions, model } = await request.json();
+    const { project_name, project_owner, model } = await request.json();
 
     if (!project_name || !project_owner) {
       return NextResponse.json({ error: 'Project name and owner are required' }, { status: 400 });
