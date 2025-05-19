@@ -2,7 +2,7 @@ import OpenAI from "npm:openai";
 
 // Définir les en-têtes CORS communs
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'http://localhost:3001', // En production, utilisez le domaine spécifique
+  'Access-Control-Allow-Origin': '*', // En production, utilisez le domaine spécifique
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
