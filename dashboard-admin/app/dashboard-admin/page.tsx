@@ -303,7 +303,7 @@ export default function DashboardAdmin() {
                                 e.stopPropagation(); 
                                 setClientToDelete(client);
                               }} 
-                              className="bg-gradient-to-r from-error to-error-light hover:from-error hover:to-error text-white py-1 px-3 rounded-full text-sm transition duration-300"
+                              className="px-3 py-1 rounded-full border border-error text-error text-sm hover:bg-error hover:text-white transition duration-200 pointer-events-auto"
                             >
                               Delete
                             </button>

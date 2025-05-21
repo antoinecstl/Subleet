@@ -293,18 +293,25 @@ export default function ClientDetail() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {projects.map((project) => (
-                <div key={project.project_id} className="glass-card rounded-xl p-6 h-full flex flex-col hover-scale">
-                  <div className="flex justify-between items-start mb-4">
-                    <Link href={`/dashboard-admin/project/${project.project_id}`} className="hover:no-underline">
-                      <h3 className="card-header mb-0 text-xl">
-                        {project.project_name}
-                      </h3>
-                    </Link>
+                <div key={project.project_id} className="glass-card rounded-xl p-6 h-full flex flex-col hover-scale relative">
+                  <Link 
+                    href={`/dashboard-admin/project/${project.project_id}`} 
+                    className="absolute inset-0 z-10 hover:no-underline"
+                    aria-label={`View details for ${project.project_name}`}
+                  >
+                    <span className="sr-only">View project details</span>
+                  </Link>
+                  
+                  <div className="flex justify-between items-start mb-4 relative z-20 pointer-events-none">
+                    <h3 className="card-header mb-0 text-xl">
+                      {project.project_name}
+                    </h3>
                     <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
                       {project.working ? 'Active' : 'Inactive'}
                     </div>
                   </div>
-                  <div className="text-sm text-muted mb-4 flex-grow">
+                  
+                  <div className="text-sm text-muted mb-4 flex-grow relative z-20 pointer-events-none">
                     <p className="mb-2">
                       {project.description || 'No description available'}
                     </p>
@@ -314,16 +321,14 @@ export default function ClientDetail() {
                       </p>
                     )}
                   </div>
-                  <div className="flex justify-between mt-auto pt-4 border-t border-card-border">
-                    <Link 
-                      href={`/dashboard-admin/project/${project.project_id}`}
-                      className="btn-outline px-3 py-1 text-sm"
-                    >
-                      Details
-                    </Link>
+                  
+                  <div className="flex justify-end mt-auto pt-4 border-t border-card-border relative z-20">
                     <button 
-                      onClick={() => setProjectToDelete(project)}
-                      className="px-3 py-1 rounded-full border border-error text-error text-sm hover:bg-error hover:text-white transition duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProjectToDelete(project);
+                      }}
+                      className="px-3 py-1 rounded-full border border-error text-error text-sm hover:bg-error hover:text-white transition duration-200 pointer-events-auto"
                     >
                       Delete
                     </button>

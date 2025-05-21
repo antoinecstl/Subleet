@@ -406,12 +406,12 @@ export default function AdminProjectDetail() {
             <h1 className="text-3xl font-bold mb-0">{project.project_name}</h1>
             <div className="flex items-center gap-3">
               <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
-                {project.working ? 'Active' : 'Inactive'}
+                State : {project.working ? 'Active' : 'Inactive'}
               </div>
               <button 
                 onClick={toggleProjectStatus}
                 disabled={isUpdating}
-                className={`btn-${project.working ? 'error' : 'gradient'} px-4 py-2 rounded-full flex items-center gap-2`}
+                className={`${project.working ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)]'} px-4 py-2 rounded-full text-white flex items-center gap-2 transition duration-300`}
               >
                 {isUpdating ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>

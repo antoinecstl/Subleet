@@ -8,7 +8,7 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function POST(request: Request) {
   try {
-    const { name, email, phone, project_list } = await request.json();
+    const { name, email, phone } = await request.json();
 
     if (!name || !email) {
       return NextResponse.json({ error: 'Name and Email are required' }, { status: 400 });
@@ -21,7 +21,6 @@ export async function POST(request: Request) {
         name,
         email,
         phone: phone || null,
-        project_list: project_list || null
       }])
       .select()
       .single();
