@@ -1,7 +1,8 @@
-import OpenAI from "npm:openai";
+// Code de la fonction Edge pour Supabase
+export const generateOpenAiFunctionCode = (projectUrl: string) => `import OpenAI from "npm:openai";
 // Définir les en-têtes CORS communs
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://antoinecastel.com',
+  'Access-Control-Allow-Origin': '${projectUrl}',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type'
 };
@@ -59,7 +60,7 @@ Deno.serve(async (req)=>{
           threadObj = await openai.beta.threads.retrieve(thread_id);
         } catch (error) {
           // Si le thread n'existe pas ou est expiré, on en crée un nouveau
-          console.log(`Thread ${thread_id} not found or expired, creating a new one`);
+          console.log(\`Thread \${thread_id} not found or expired, creating a new one\`);
           threadObj = await openai.beta.threads.create();
           isNewThread = true;
           newThreadId = threadObj.id;
@@ -101,34 +102,34 @@ Deno.serve(async (req)=>{
                   if (content.type === "text" && content.text?.value) {
                     const text = content.text.value;
                     // Envoyer le texte dans le stream de réponse
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                    controller.enqueue(encoder.encode(\`data: \${JSON.stringify({
                       content: text
-                    })}\n\n`));
+                    })}\\n\\n\`));
                   }
                 }
               } else if (chunk.event === "thread.run.completed") {
                 // On envoie un événement final qui contient l'ID du thread si c'est nouveau
                 if (isNewThread) {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  controller.enqueue(encoder.encode(\`data: \${JSON.stringify({
                     threadId: threadObj.id,
                     done: true
-                  })}\n\n`));
+                  })}\\n\\n\`));
                 } else {
-                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                  controller.enqueue(encoder.encode(\`data: \${JSON.stringify({
                     done: true
-                  })}\n\n`));
+                  })}\\n\\n\`));
                 }
               } else if (chunk.event === "thread.run.failed") {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                controller.enqueue(encoder.encode(\`data: \${JSON.stringify({
                   error: "Run failed"
-                })}\n\n`));
+                })}\\n\\n\`));
                 controller.close();
               }
             } catch (error) {
               console.error("Error processing stream chunk:", error);
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+              controller.enqueue(encoder.encode(\`data: \${JSON.stringify({
                 error: "Error processing response"
-              })}\n\n`));
+              })}\\n\\n\`));
             }
           }
           controller.close();
@@ -167,4 +168,38 @@ Deno.serve(async (req)=>{
       }
     });
   }
+});`;
+
+/**
+ * Génère un code pour une fonction Edge désactivée
+ * @param projectName - Nom du projet
+ * @returns Code source pour la fonction Edge désactivée
+ */
+export const generateDisabledFunctionCode = (projectName: string) => `
+Deno.serve(async (req) => {
+  // Définir les en-têtes CORS
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  };
+
+  // Pour les requêtes OPTIONS (pre-flight)
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+
+  // Pour toutes les autres requêtes, renvoyer un message d'erreur
+  return new Response(JSON.stringify({
+    error: "Ce chatbot est actuellement désactivé. Veuillez contacter l'administrateur du projet '${projectName}' pour plus d'informations."  }), {
+    status: 403,
+    headers: {
+      'Content-Type': 'application/json',
+      ...corsHeaders
+    }
+  });
 });
+`;

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
-import { createVectorStore, createAssistant, SUPPORTED_MODELS } from '../../../../../lib/vector-store-utils';
+import { createVectorStore, createAssistant, SUPPORTED_MODELS } from '@/lib/vector-store-utils';
+import { deployEdgeFunction } from '@/lib/edge-functions/deploy-utils';
 
 dotenv.config();
 
@@ -9,10 +10,15 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function POST(request: Request) {
   try {
-    const { project_name, project_owner, model } = await request.json();
+    const { project_name, project_owner, model, project_url } = await request.json();
 
-    if (!project_name || !project_owner) {
-      return NextResponse.json({ error: 'Project name and owner are required' }, { status: 400 });
+    if (!project_name || !project_owner || !project_url) {
+      return NextResponse.json({ error: 'Project name, owner, and URL are required' }, { status: 400 });
+    }
+    
+    // Vérifier si l'identifiant du projet Supabase est disponible dans les variables d'environnement
+    if (!process.env.SUPABASE_PROJECT_REF) {
+      return NextResponse.json({ error: 'SUPABASE_PROJECT_REF environment variable is not set' }, { status: 500 });
     }
 
     // Vérifier si le modèle est supporté
@@ -38,23 +44,29 @@ export async function POST(request: Request) {
     } catch (error) {
       console.error('Failed to create assistant:', error);
       return NextResponse.json({ error: 'Failed to create Assistant' }, { status: 500 });
-    }
-
+    }    // Générer un slug unique avec timestamp
+    const timestamp = Date.now().toString(36);
+    const uniqueId = Math.random().toString(36).substring(2, 8);
+    const edgeFunctionSlug = `Subleet-${project_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${timestamp}-${uniqueId}`;
+    
     // Insert into projects
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
       .insert([{ 
         project_name, 
         project_owner, 
-        working: true // Default to active
+        project_url, // Ajout de l'URL du projet
+        working: true, // Default to active
+        edge_function_slug: edgeFunctionSlug // Slug unique avec identifiant
       }])
       .select()
       .single();
-
-    if (projectError) {
+      
+      if (projectError) {
       // Si une erreur se produit, essayer de supprimer le vector store et l'assistant
       try {
         // Code pour supprimer le vector store sera implémenté plus tard
+        // Note: Si besoin, ajouter ici la logique pour supprimer la fonction Edge déployée
       } catch (cleanupError) {
         console.error('Failed to clean up resources after project creation failure:', cleanupError);
       }
@@ -73,9 +85,7 @@ export async function POST(request: Request) {
     if (vectorStoreError) {
       console.error('Error saving vector store information:', vectorStoreError);
       // Continuer malgré l'erreur, car le projet a été créé avec succès
-    }
-
-    // Enregistrer l'ID de l'Assistant dans la table assistants si l'assistant a été créé
+    }    // Enregistrer l'ID de l'Assistant dans la table assistants si l'assistant a été créé
     if (assistantData) {
       const { error: assistantError } = await supabase
         .from('assistants')
@@ -91,6 +101,21 @@ export async function POST(request: Request) {
         console.error('Error saving assistant information:', assistantError);
         // Continuer malgré l'erreur, car le projet et le vector store ont été créés avec succès
       }
+    }    // Déployer la fonction Edge sur Supabase
+    let edgeFunctionData;
+    let edgeFunctionError;
+    try {
+      // Utilise le slug déjà stocké dans projectData
+      const functionName = projectData.edge_function_slug;
+      edgeFunctionData = await deployEdgeFunction(
+        process.env.SUPABASE_PROJECT_REF!, 
+        functionName,
+        project_url // Passer l'URL du projet pour les CORS
+      );
+        
+    } catch (error) {
+      console.error('Failed to deploy Edge Function:', error);
+      edgeFunctionError = error;
     }
 
     // Return the successful response
@@ -98,7 +123,9 @@ export async function POST(request: Request) {
       message: 'Project created successfully.', 
       project: projectData,
       vector_store_id: vectorStoreId,
-      assistant_id: assistantData?.id || null
+      assistant_id: assistantData?.id || null,
+      edge_function: edgeFunctionData || null,
+      edge_function_error: edgeFunctionError ? String(edgeFunctionError) : null
     });
 
   } catch (error) {

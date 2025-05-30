@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Catalysia",
-  description: "Dashboard Web App for Catalysia Clients",
+  title: "Subleet",
+  description: "Dashboard Web App for Subleet Clients",
 };
 
 export default function RootLayout({

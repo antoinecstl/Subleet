@@ -301,16 +301,28 @@ export default function ProjectDetail() {
             <h3 className="card-header">Project Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
-                <div>
-                  <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>
-                  <span>{project.project_id}</span>
-                </div>
+                {/* ID du projet supprimé pour l'interface publique */}
                 {project.creation_timestamp && (
                   <div>
                     <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
                     <span>{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
                   </div>
                 )}
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Project URL</span>
+                  {project.project_url ? (
+                    <a 
+                      href={project.project_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary underline hover:text-primary-light break-all transition-colors"
+                    >
+                      {project.project_url}
+                    </a>
+                  ) : (
+                    <span className="text-muted">No URL provided</span>
+                  )}
+                </div>
               </div>
               <div className="space-y-3">
                 {assistantInfo?.model && (

@@ -89,7 +89,8 @@ export async function GET(request: Request) {
       assistant: assistantDetails ? {
         instructions: assistantDetails.instructions,
         model: assistantDetails.model
-      } : null
+      } : null,
+      projectUrl: projectData?.project_url || null
     });
 
   } catch (error) {

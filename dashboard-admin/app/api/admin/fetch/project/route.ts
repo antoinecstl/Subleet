@@ -73,7 +73,8 @@ export async function GET(request: Request) {
       callHistory: callHistory || [],
       vectorStoreId: vectorStoreData?.openai_vector_id || null,
       assistantId: assistantData?.openai_assistant_id || null,
-      assistant: assistant
+      assistant: assistant,
+      projectUrl: projectData?.project_url || null
     });
 
   } catch (error) {

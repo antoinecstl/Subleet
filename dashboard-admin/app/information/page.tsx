@@ -14,9 +14,8 @@ export default function InformationPage() {
         <div className="text-center max-w-4xl mx-auto mb-16">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             Enhancing Business with <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Intelligent AI</span>
-          </h1>
-          <p className="text-xl text-muted max-w-3xl mx-auto">
-            Discover how Catalysia's AI solutions can transform your customer service,
+          </h1>          <p className="text-xl text-muted max-w-3xl mx-auto">
+            Discover how Subleet's AI solutions can transform your customer service,
             boost engagement, and streamline operations.
           </p>
         </div>
@@ -284,9 +283,8 @@ export default function InformationPage() {
         
         {/* CTA Section */}
         <div className="glass-card rounded-xl p-8 text-center">
-          <h2 className="text-2xl font-semibold mb-4">Ready to enhance your business with AI?</h2>
-          <p className="text-lg text-muted mb-6 max-w-2xl mx-auto">
-            Start your journey with Catalysia today and experience the benefits of custom AI solutions
+          <h2 className="text-2xl font-semibold mb-4">Ready to enhance your business with AI?</h2>          <p className="text-lg text-muted mb-6 max-w-2xl mx-auto">
+            Start your journey with Subleet today and experience the benefits of custom AI solutions
             tailored to your specific business needs.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

@@ -32,7 +32,7 @@ export default function Home() {
           <div className="mb-8 relative">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fadeIn">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 animate-glow">
-                Catalysia
+                Subleet
               </span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 leading-relaxed">
@@ -112,7 +112,7 @@ export default function Home() {
                 <div className="md:w-1/2 mb-6 md:mb-0 md:pr-8">
                   <h2 className="card-header text-2xl">About Our Solutions</h2>
                   <p className="mb-4">
-                    Catalysia allows you to integrate custom AI assistants into your web and mobile applications. Our solutions adapt to all business sectors to enhance your users' experience.
+                    Subleet allows you to integrate custom AI assistants into your web and mobile applications. Our solutions adapt to all business sectors to enhance your users' experience.
                   </p>
                   <Link href="/pricing" className="btn-gradient px-6 py-2 inline-block">
                     View Our Plans

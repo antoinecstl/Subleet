@@ -470,6 +470,21 @@ export default function AdminProjectDetail() {
                     <span>{new Date(project.creation_timestamp).toLocaleDateString()}</span>
                   </div>
                 )}
+                <div>
+                  <span className="text-sm font-semibold text-muted block mb-1">Project URL</span>
+                  {project.project_url ? (
+                    <a 
+                      href={project.project_url} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-primary underline hover:text-primary-light break-all transition-colors"
+                    >
+                      {project.project_url}
+                    </a>
+                  ) : (
+                    <span className="text-muted">No URL provided</span>
+                  )}
+                </div>
               </div>
               <div className="space-y-3">
                 {assistantInfo?.model && (

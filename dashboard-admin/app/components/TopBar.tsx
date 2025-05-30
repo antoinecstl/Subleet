@@ -48,15 +48,14 @@ export default function TopBar() {
     >
       <div className="flex items-center h-full">
         <Link href="/" className="group flex items-center">
-          <h1 className="text-2xl font-bold cursor-pointer flex items-center my-0">
-        <span
+          <h1 className="text-2xl font-bold cursor-pointer flex items-center my-0">        <span
           className={`text-transparent bg-clip-text bg-gradient-to-r ${
             theme === "light"
           ? "from-indigo-600 via-purple-600 to-pink-600"
           : "from-indigo-400 via-purple-400 to-pink-400"
           }`}
         >
-          Catalysia
+          Subleet
         </span>
           </h1>
         </Link>

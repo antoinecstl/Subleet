@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Toast from '../../../components/Toast';
-import { getCache, setCache } from '../../../../lib/cache-utils';
+import { getCache, setCache } from '@/lib/cache-utils';
 
 export default function ClientDetail() {
   const { id } = useParams();
@@ -14,6 +14,7 @@ export default function ClientDetail() {
   const [loading, setLoading] = useState(true);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectUrl, setNewProjectUrl] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<any>(null);
@@ -85,14 +86,18 @@ export default function ClientDetail() {
       setToast({ message: 'Project name is required', type: 'error' });
       return;
     }
-
+    if (!newProjectUrl.trim()) {
+      setToast({ message: 'Project URL is required', type: 'error' });
+      return;
+    }
     try {
       const response = await fetch('/api/admin/projects/add', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           project_name: newProjectName.trim(),
-          project_owner: id 
+          project_owner: id,
+          project_url: newProjectUrl.trim()
         })
       });
       
@@ -119,6 +124,7 @@ export default function ClientDetail() {
       setToast({ message: 'Project added successfully', type: 'success' });
       setShowProjectForm(false);
       setNewProjectName('');
+      setNewProjectUrl('');
     } catch (error) {
       console.error('Error adding project:', error);
       setToast({ 
@@ -355,10 +361,21 @@ export default function ClientDetail() {
                   className="input-field"
                 />
               </div>
+              <div className="form-group">
+                <label className="form-label">Project URL</label>
+                <input
+                  value={newProjectUrl}
+                  onChange={(e) => setNewProjectUrl(e.target.value)}
+                  placeholder="Enter project URL"
+                  className="input-field"
+                  type="url"
+                  required
+                />
+              </div>
               <div className="flex gap-3 justify-end mt-4">
                 <button 
                   type="button" 
-                  onClick={() => setShowProjectForm(false)} 
+                  onClick={() => { setShowProjectForm(false); setNewProjectName(''); setNewProjectUrl(''); }} 
                   className="btn-ghost px-5 py-2"
                 >
                   Cancel
