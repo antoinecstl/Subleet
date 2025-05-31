@@ -26,14 +26,11 @@ export default function ChatBox() {
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [isPlaceholderFading, setIsPlaceholderFading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);  const [isAnimating, setIsAnimating] = useState(false);
   const [chatBoxClass, setChatBoxClass] = useState("");
   
-  // Récupérer les IDs depuis les variables d'environnement
-  const vectorStoreId = process.env.NEXT_PUBLIC_VECTOR_STORE_ID || "";
-  const assistantId = process.env.NEXT_PUBLIC_ASSISTANT_ID || "";
-  const apiUrl = process.env.NEXT_PUBLIC_EDGEFCT_URL || "";
+  // Utiliser l'URL du proxy API local au lieu de l'URL directe de l'Edge Function
+  const apiUrl = '/api/chatbox-proxy';
 
   // Suggestions de questions spécifiques au CV en français et en anglais
   const placeholderQuestions = {
@@ -103,13 +100,10 @@ export default function ChatBox() {
     
     return () => clearInterval(animationInterval);
   }, [language, messages.length]);
-
   useEffect(() => {
-    // Récupérer le threadId du localStorage s'il existe
-    const savedThreadId = localStorage.getItem('chatThreadId');
-    if (savedThreadId) {
-      setThreadId(savedThreadId);
-    }
+    // Clear threadId from localStorage on page load/reload
+    localStorage.removeItem('chatThreadId');
+    setThreadId(null);
     
     return () => {
       // Nettoyer les références au thread lorsque le composant est démonté
@@ -162,10 +156,13 @@ export default function ChatBox() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCurrentMessage(e.target.value);
-  };
-  // Appeler l'Edge Function avec la requête de l'utilisateur (version streaming)
+  };  // Appeler l'Edge Function via le proxy avec la requête de l'utilisateur (version streaming)
   const callOpenAIEdgeFunction = async (userQuery: string, onChunkReceived: (chunk: string) => void) => {
     try {  
+      // Configurer un timeout pour la requête avec AbortController
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 secondes de timeout
+      
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
@@ -173,14 +170,28 @@ export default function ChatBox() {
         },
         body: JSON.stringify({
           query: `$\nQuestion du client: ${userQuery}`,
-          vector_store_id: vectorStoreId,
-          assistant_id: assistantId,
           thread_id: threadId
-        })
+        }),
+        signal: controller.signal
       });
       
+      // Nettoyer le timeout une fois la réponse reçue
+      clearTimeout(timeoutId);
+      
       if (!response.ok) {
-        throw new Error(`Erreur Edge: ${response.status}`);
+        const errorText = await response.text();
+        let errorMessage = `Erreur ${response.status}`;
+        try {
+          // Essayer de parser le message d'erreur JSON
+          const errorData = JSON.parse(errorText);
+          if (errorData.error) {
+            errorMessage = `${errorMessage}: ${errorData.error}`;
+          }
+        } catch {
+          // Si ce n'est pas du JSON, utiliser le texte brut
+          errorMessage = `${errorMessage}: ${errorText.substring(0, 200)}`;
+        }
+        throw new Error(errorMessage);
       }
       
       // Vérifier que nous avons bien un stream comme réponse
@@ -292,21 +303,48 @@ export default function ChatBox() {
           });
         });
       };
-      
-      // Appeler l'API Edge Function avec streaming
+        // Appeler l'API Edge Function avec streaming
       await callOpenAIEdgeFunction(currentMessage, onChunkReceived);
       
       // Le contenu complet est déjà mis à jour dans la state via le callback
     } catch (error) {
-      // En cas d'erreur, mettre à jour le message de l'assistant avec le message d'erreur
+      // Déterminer le message d'erreur approprié
+      let errorMessage = '';
+      
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        // Erreur de timeout
+        errorMessage = language === 'fr' 
+          ? "La requête a pris trop de temps. Veuillez réessayer plus tard."
+          : "The request timed out. Please try again later.";
+      } else if (error instanceof Error) {
+        // Erreur avec message spécifique
+        if (error.message.includes('429')) {
+          errorMessage = language === 'fr'
+            ? "Trop de requêtes. Veuillez patienter quelques instants avant de réessayer."
+            : "Too many requests. Please wait a moment before trying again.";
+        } else if (error.message.includes('5')) {
+          errorMessage = language === 'fr'
+            ? "Le serveur rencontre des difficultés. Veuillez réessayer plus tard."
+            : "The server is experiencing issues. Please try again later.";
+        } else {
+          errorMessage = language === 'fr'
+            ? `Erreur: ${error.message}`
+            : `Error: ${error.message}`;
+        }
+      } else {
+        // Erreur générique
+        errorMessage = language === 'fr'
+          ? "Une erreur s'est produite. Veuillez réessayer."
+          : "An error occurred. Please try again.";
+      }
+      
+      // Mettre à jour le message de l'assistant avec le message d'erreur approprié
       setMessages((prevMessages) => {
         return prevMessages.map((msg) => {
           if (msg.id === assistantMessageId) {
             return {
               ...msg,
-              content: language === 'fr' ? 
-                "Désolé, une erreur s'est produite. Veuillez réessayer." : 
-                "Sorry, an error occurred. Please try again."
+              content: errorMessage
             };
           }
           return msg;
@@ -314,7 +352,7 @@ export default function ChatBox() {
       });
       
       console.error("Error in sendMessage:", error);
-    } finally {
+    }finally {
       setIsLoading(false);
     }
   };
