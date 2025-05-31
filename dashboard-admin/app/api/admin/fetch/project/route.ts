@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { getAssistant } from '@/lib/vector-store-utils';
+import { decryptApiKey } from '@/lib/api-key-utils';
 
 dotenv.config();
 
@@ -55,8 +56,7 @@ export async function GET(request: Request) {
       .eq('project_id', projectId)
       .order('timestamp', { ascending: false })
       .limit(20);
-      
-    // Récupérer les détails complets de l'assistant depuis OpenAI
+        // Récupérer les détails complets de l'assistant depuis OpenAI
     let assistant = null;
     if (assistantData?.openai_assistant_id) {
       try {
@@ -66,15 +66,31 @@ export async function GET(request: Request) {
         // Ne pas bloquer le reste de la réponse si l'assistant n'est pas récupérable
       }
     }
-
-    return NextResponse.json({
+    
+    // Récupérer et décrypter la clé API
+    let apiKey = null;
+    const { data: apiKeyData, error: apiKeyError } = await supabase
+      .from('api_keys')
+      .select('encrypted_key')
+      .eq('project_id', projectId)
+      .single();
+      
+    if (!apiKeyError && apiKeyData?.encrypted_key && process.env.API_ENCRYPTION_SECRET) {
+      try {
+        apiKey = decryptApiKey(apiKeyData.encrypted_key, process.env.API_ENCRYPTION_SECRET);
+      } catch (error) {
+        console.error('Error decrypting API key:', error);
+        // Ne pas bloquer le reste de la réponse si le décryptage échoue
+      }
+    }    return NextResponse.json({
       project: projectData,
       clientInfo: clientData || null,
       callHistory: callHistory || [],
       vectorStoreId: vectorStoreData?.openai_vector_id || null,
       assistantId: assistantData?.openai_assistant_id || null,
       assistant: assistant,
-      projectUrl: projectData?.project_url || null
+      projectUrl: projectData?.project_url || null,
+      apiKey: apiKey
     });
 
   } catch (error) {

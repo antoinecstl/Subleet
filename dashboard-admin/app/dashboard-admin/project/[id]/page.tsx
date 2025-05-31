@@ -37,9 +37,9 @@ export default function AdminProjectDetail() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
   const [assistantId, setAssistantId] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
   const [isEditingContext, setIsEditingContext] = useState(false);
@@ -59,6 +59,7 @@ export default function AdminProjectDetail() {
             setEditedContext(cachedData.project?.context || '');
             setVectorStoreId(cachedData.vectorStoreId || null);
             setAssistantId(cachedData.assistantId || null);
+            setApiKey(cachedData.apiKey || null);
             setLoading(false);
             return;
           }
@@ -77,6 +78,7 @@ export default function AdminProjectDetail() {
           setEditedContext(data.project?.context || '');
           setVectorStoreId(data.vectorStoreId || null);
           setAssistantId(data.assistantId || null);
+          setApiKey(data.apiKey || null);
           
           // Cache the result
           setCache(`cache_admin_project_${id}`, {
@@ -84,7 +86,8 @@ export default function AdminProjectDetail() {
             clientInfo: data.clientInfo,
             assistant: data.assistant,
             vectorStoreId: data.vectorStoreId,
-            assistantId: data.assistantId
+            assistantId: data.assistantId,
+            apiKey: data.apiKey
           });
         }
       } catch (error) {
@@ -163,7 +166,8 @@ export default function AdminProjectDetail() {
         clientInfo,
         assistant: assistantInfo,
         vectorStoreId,
-        assistantId
+        assistantId,
+        apiKey
       });
       // Also invalidate the client cache since project status changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
@@ -219,7 +223,8 @@ export default function AdminProjectDetail() {
           assistant: {
             ...cachedData.assistant,
             instructions: data.assistant.instructions
-          }
+          },
+          apiKey: cachedData.apiKey || apiKey
         });
       }
       
@@ -268,7 +273,8 @@ export default function AdminProjectDetail() {
           assistant: {
             ...cachedData.assistant,
             model: data.assistant.model
-          }
+          },
+          apiKey: cachedData.apiKey || apiKey
         });
       }
       
@@ -351,17 +357,26 @@ export default function AdminProjectDetail() {
     else return (bytes / 1073741824).toFixed(1) + ' GB';
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+  // Add a function to copy API key to clipboard
+  const copyApiKey = async () => {
+    if (apiKey) {
+      try {
+        await navigator.clipboard.writeText(apiKey);
         setCopySuccess(true);
-        setToast({ message: 'ID copied to clipboard', type: 'success' });
         setTimeout(() => setCopySuccess(false), 2000);
-      })
-      .catch(err => {
-        console.error('Could not copy text: ', err);
-        setToast({ message: 'Copy failed', type: 'error' });
-      });
+      } catch (err) {
+        console.error('Failed to copy: ', err);
+      }
+    }
   };
 
   if (loading) {
@@ -626,6 +641,32 @@ export default function AdminProjectDetail() {
               </div>
             )}
           </div>
+
+          {/* API Key Section */}
+          {apiKey && (
+            <div className="p-6 glass-card rounded-xl mb-6">
+              <h3 className="card-header">
+                API Key
+              </h3>
+              <div className="mt-4">
+                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow font-mono">
+                    {apiKey}
+                  </code>
+                  <button 
+                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    onClick={() => copyApiKey()}
+                    title="Copy API Key"
+                  >
+                    <FaCopy size={16} />
+                  </button>
+                </div>
+                <p className="text-xs text-muted mt-3">
+                  This API key is required for the chatbox to authenticate with Edge Functions. It is encrypted in storage and only displayed here.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Vector Store Files Section */}

@@ -1,11 +1,17 @@
 // Code de la fonction Edge pour Supabase
-export const generateOpenAiFunctionCode = (projectUrl: string) => `import OpenAI from "npm:openai";
+export const generateOpenAiFunctionCode = (projectUrl: string, vectorStoreId?: string, assistantId?: string, apiKey?: string) => `import OpenAI from "npm:openai";
 // Définir les en-têtes CORS communs
 const corsHeaders = {
   'Access-Control-Allow-Origin': '${projectUrl}',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type'
+  'Access-Control-Allow-Headers': 'Content-Type, x-api-key'
 };
+
+// Hardcoded IDs et clé pour ce projet spécifique
+const VECTOR_STORE_ID = "${vectorStoreId}";
+const ASSISTANT_ID = "${assistantId}";
+const API_KEY = "${apiKey}"; // Clé API hardcodée pour la sécurité
+
 Deno.serve(async (req)=>{
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -13,37 +19,49 @@ Deno.serve(async (req)=>{
       headers: corsHeaders
     });
   }
+  
+  // Vérifier la clé API
+  const providedApiKey = req.headers.get('x-api-key');
+  if (!providedApiKey || providedApiKey !== API_KEY) {
+    return new Response('Unauthorized: Invalid API key', {
+      status: 401,
+      headers: corsHeaders
+    });
+  }
+  
   try {
     const apiKey = Deno.env.get('OPENAI_API_KEY');
     if (!apiKey) {
-      return new Response('OpenAI API key is required', {
+      return new Response('Subleet Error contact admin', {
         status: 500,
         headers: corsHeaders
       });
-    }
+    }    
     // Lire le corps de la requête pour obtenir la requête de l'utilisateur
     const requestData = await req.json();
-    const { query, vector_store_id, assistant_id, thread_id } = requestData;
+    const { query, thread_id } = requestData;
     if (!query) {
       return new Response('Query parameter is required', {
         status: 400,
         headers: corsHeaders
       });
     }
-    // Vérifier si un vector_store_id est fourni
-    if (!vector_store_id) {
-      return new Response('Vector store ID is required', {
-        status: 400,
+    
+    // Vérifier si un vector_store_id est disponible
+    if (!VECTOR_STORE_ID) {
+      return new Response('Subleet Error contact admin', {
+        status: 500,
         headers: corsHeaders
       });
     }
-    // Vérifier si un assistant_id est fourni
-    if (!assistant_id) {
-      return new Response('Assistant ID is required', {
-        status: 400,
+    // Vérifier si un assistant_id est disponible
+    if (!ASSISTANT_ID) {
+      return new Response('Subleet Error contact admin', {
+        status: 500,
         headers: corsHeaders
       });
     }
+    
     const openai = new OpenAI({
       apiKey: apiKey
     });
@@ -82,11 +100,11 @@ Deno.serve(async (req)=>{
         async start (controller) {
           // Créer un run pour obtenir la réponse en mode streaming
           const runStream = await openai.beta.threads.runs.createAndStream(threadObj.id, {
-            assistant_id: assistant_id,
+            assistant_id: ASSISTANT_ID,
             tool_resources: {
               file_search: {
                 vector_store_ids: [
-                  vector_store_id
+                  VECTOR_STORE_ID
                 ]
               }
             }

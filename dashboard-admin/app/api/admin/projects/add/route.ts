@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import { createVectorStore, createAssistant, SUPPORTED_MODELS } from '@/lib/vector-store-utils';
 import { deployEdgeFunction } from '@/lib/edge-functions/deploy-utils';
+import { generateApiKey, encryptApiKey } from '@/lib/api-key-utils';
 
 dotenv.config();
 
@@ -49,6 +50,18 @@ export async function POST(request: Request) {
     const uniqueId = Math.random().toString(36).substring(2, 8);
     const edgeFunctionSlug = `Subleet-${project_name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${timestamp}-${uniqueId}`;
     
+    // Générer une clé API unique pour ce projet
+    const apiKey = generateApiKey();
+    
+    // Vérifier que la clé de chiffrement est configurée
+    if (!process.env.API_ENCRYPTION_SECRET || process.env.API_ENCRYPTION_SECRET.length < 32) {
+      console.error('API_ENCRYPTION_SECRET is not properly configured');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+    
+    // Encrypter la clé API pour stockage sécurisé
+    const encryptedApiKey = encryptApiKey(apiKey, process.env.API_ENCRYPTION_SECRET);
+    
     // Insert into projects
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
@@ -61,7 +74,6 @@ export async function POST(request: Request) {
       }])
       .select()
       .single();
-      
       if (projectError) {
       // Si une erreur se produit, essayer de supprimer le vector store et l'assistant
       try {
@@ -71,9 +83,7 @@ export async function POST(request: Request) {
         console.error('Failed to clean up resources after project creation failure:', cleanupError);
       }
       throw projectError;
-    }
-
-    // Enregistrer l'ID du Vector Store dans la table vector_stores
+    }    // Enregistrer l'ID du Vector Store dans la table vector_stores
     const { error: vectorStoreError } = await supabase
       .from('vector_stores')
       .insert([{
@@ -85,7 +95,21 @@ export async function POST(request: Request) {
     if (vectorStoreError) {
       console.error('Error saving vector store information:', vectorStoreError);
       // Continuer malgré l'erreur, car le projet a été créé avec succès
-    }    // Enregistrer l'ID de l'Assistant dans la table assistants si l'assistant a été créé
+    }
+    
+    // Enregistrer la clé API encryptée dans la table api_keys
+    const { error: apiKeyError } = await supabase
+      .from('api_keys')
+      .insert([{
+        project_id: projectData.project_id,
+        encrypted_key: encryptedApiKey,
+        created_at: new Date().toISOString()
+      }]);
+    
+    if (apiKeyError) {
+      console.error('Error saving API key:', apiKeyError);
+      // Ne pas bloquer la création du projet en cas d'erreur
+    }// Enregistrer l'ID de l'Assistant dans la table assistants si l'assistant a été créé
     if (assistantData) {
       const { error: assistantError } = await supabase
         .from('assistants')
@@ -104,16 +128,21 @@ export async function POST(request: Request) {
     }    // Déployer la fonction Edge sur Supabase
     let edgeFunctionData;
     let edgeFunctionError;
-    try {
-      // Utilise le slug déjà stocké dans projectData
-      const functionName = projectData.edge_function_slug;
+    try {      // Utilise le slug déjà stocké dans projectData
+      const functionName = projectData.edge_function_slug;      
+      
       edgeFunctionData = await deployEdgeFunction(
         process.env.SUPABASE_PROJECT_REF!, 
         functionName,
-        project_url // Passer l'URL du projet pour les CORS
+        project_url,               // Passer l'URL du projet pour les CORS
+        true,                     // Active par défaut
+        project_name,             // Nom du projet
+        vectorStoreId,            // ID du Vector Store à hardcoder
+        assistantData?.id,        // ID de l'Assistant à hardcoder (undefined si n'existe pas)
+        apiKey                    // Clé API à hardcoder dans la fonction
       );
-        
-    } catch (error) {
+      
+        } catch (error) {
       console.error('Failed to deploy Edge Function:', error);
       edgeFunctionError = error;
     }
