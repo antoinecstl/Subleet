@@ -106,11 +106,10 @@ export default function ProjectDetail() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
-
   const fetchVectorFiles = async () => {
     try {
       setLoadingFiles(true);
-      const response = await fetch(`/api/admin/vector-store/files?project_id=${id}`);
+      const response = await fetch(`/api/public/vector-store/files?project_id=${id}`);
       if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
@@ -184,9 +183,9 @@ export default function ProjectDetail() {
     try {
       const formData = new FormData();
       formData.append('project_id', id as string);
-      formData.append('file', selectedFile);
-
-      const response = await fetch('/api/admin/vector-store/upload', {
+      formData.append('file', selectedFile);      
+      
+      const response = await fetch('/api/public/vector-store/upload', {
         method: 'POST',
         body: formData,
       });
@@ -211,8 +210,8 @@ export default function ProjectDetail() {
   };
 
   const handleDeleteFile = async (fileId: string) => {
-    try {
-      const response = await fetch(`/api/admin/vector-store/delete?project_id=${id}&file_id=${fileId}`, {
+    try {      
+      const response = await fetch(`/api/public/vector-store/delete?project_id=${id}&file_id=${fileId}`, {
         method: 'DELETE',
       });
 

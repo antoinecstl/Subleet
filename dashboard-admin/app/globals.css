@@ -380,7 +380,7 @@ body:not(.light-theme) {
   
   /* Theme toggle control */
   .theme-toggle {
-    @apply w-12 h-6 rounded-full relative transition-colors duration-300 cursor-pointer flex items-center;
+    @apply w-10 h-6 rounded-full relative transition-colors duration-300 cursor-pointer flex items-center;
   }
   
   body.light-theme .theme-toggle {
@@ -393,14 +393,18 @@ body:not(.light-theme) {
   
   .theme-toggle-circle {
     @apply absolute w-5 h-5 rounded-full transition-transform duration-300 flex items-center justify-center;
+    top: 50%;
+    transform: translateY(-50%);
   }
   
   body.light-theme .theme-toggle-circle {
-    @apply transform translate-x-[calc(100%+0.5rem)] bg-indigo-600 text-indigo-100;
+    @apply bg-indigo-600 text-indigo-100;
+    transform: translateY(-50%) translateX(calc(87%));
   }
   
   body:not(.light-theme) .theme-toggle-circle {
-    @apply transform translate-x-0.5 bg-white text-indigo-900;
+    @apply bg-white text-indigo-900;
+    transform: translateY(-50%) translateX(0.5px);
   }
   
   .theme-toggle-icon {
@@ -551,15 +555,6 @@ body:not(.light-theme) {
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease-in-out forwards;
-}
-
-/* Table elements */
-table {
-  @apply bg-table-bg text-table-text border-table-border rounded-xl overflow-hidden;
-}
-
-th, td {
-  @apply border-table-border;
 }
 
 /* Adding CSS variables for consistent border radius */

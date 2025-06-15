@@ -4,6 +4,7 @@ import "./globals.css";
 import TopBar from "./components/TopBar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { LanguageProvider } from "../lib/language-context";
+import { SubscriptionProvider } from "../lib/subscription-context";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,8 +31,10 @@ export default function RootLayout({
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
           <LanguageProvider>
-            <TopBar />
-            {children}
+            <SubscriptionProvider>
+              <TopBar />
+              {children}
+            </SubscriptionProvider>
           </LanguageProvider>
         </body>
       </html>

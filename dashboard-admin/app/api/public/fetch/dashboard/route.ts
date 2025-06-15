@@ -10,6 +10,7 @@ const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_AN
 
 export async function GET() {
   try {
+    // Vérifier l'authentification
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,9 +19,7 @@ export async function GET() {
     const user = await currentUser();
     if (!user || !user.emailAddresses || user.emailAddresses.length === 0) {
       return NextResponse.json({ error: 'User email not found' }, { status: 400 });
-    }
-
-    const primaryEmail = user.emailAddresses[0].emailAddress;
+    }    const primaryEmail = user.emailAddresses[0].emailAddress;
 
     // Find client by email
     const { data: clientData, error: clientError } = await supabase
@@ -33,8 +32,8 @@ export async function GET() {
       console.error('Client error:', clientError);
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
-
-    // Find projects associated with this client
+    
+    // Find projects associated with this client using project_owner
     const { data: projectsData, error: projectsError } = await supabase
       .from('projects')
       .select('*')
@@ -44,11 +43,10 @@ export async function GET() {
     if (projectsError) {
       console.error('Projects error:', projectsError);
       return NextResponse.json({ error: 'Error fetching projects' }, { status: 500 });
-    }
-
-    return NextResponse.json({
+    }    return NextResponse.json({
       client: clientData,
-      projects: projectsData
+      projects: projectsData,
+      hasClassicPlan: true // Garanti par le middleware - tous les utilisateurs ici ont le plan Classic
     });
 
   } catch (error) {

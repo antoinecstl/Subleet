@@ -10,7 +10,7 @@ import { getCache, setCache } from '../../lib/cache-utils';
 import { useUser } from "@clerk/nextjs";
 
 interface Client {
-  id: number;
+  id: string;
   name: string;
   email: string;
   phone: string;
@@ -144,20 +144,25 @@ export default function DashboardAdmin() {
   const sortedClients = [...filteredClients].sort((a, b) => {
     const compare = new Date(a.creation_date).getTime() - new Date(b.creation_date).getTime();
     return sortOrder === 'asc' ? compare : -compare;
-  });
-
-  const handleDelete = async (id: number): Promise<void> => {
+  });  const handleDelete = async (id: string): Promise<void> => {
     try {
+      // Find the client to get their email
+      const clientToDelete = clients.find(client => client.id === id);
+      if (!clientToDelete) {
+        throw new Error('Client not found');
+      }
+
       const response = await fetch('/api/admin/users/delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ email: clientToDelete.email }),
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
       }
 
       // Update local state

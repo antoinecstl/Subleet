@@ -1,6 +1,6 @@
 "use client"
 import { usePathname } from "next/navigation";
-import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { useLanguage } from "../../lib/language-context";
 import { useState, useEffect } from "react";
@@ -61,7 +61,7 @@ export default function TopBar() {
         </Link>
         
         {/* Navigation links */}
-        <nav className="hidden md:flex items-center ml-8 space-x-6">
+        <nav className="hidden sm:flex items-center ml-8 space-x-6">
           <SignedIn>
             <Link 
               href="/dashboard"
@@ -71,7 +71,7 @@ export default function TopBar() {
             </Link>
           </SignedIn>
           <Link 
-            href="/information" 
+            href="/about" 
             className={`nav-link ${isActive('/information') ? 'font-medium text-primary' : 'text-muted'} transition-colors duration-200 hover:text-primary`}
           >
             About
@@ -82,12 +82,18 @@ export default function TopBar() {
           >
             Pricing
           </Link>
+          <Link 
+            href="/"
+            className={`nav-link ${isActive('/documentation') ? 'font-medium text-primary' : 'text-muted'} transition-colors duration-200 hover:text-primary`}
+          >
+            Documentation
+          </Link>
         </nav>
       </div>
       <div className="flex items-center space-x-4">
         {/* Theme toggle */}
         <div
-          className="theme-toggle"
+          className="hidden sm:block theme-toggle"
           onClick={toggleTheme}
           role="button"
           tabIndex={0}
@@ -124,7 +130,7 @@ export default function TopBar() {
           <>
             <SignedOut>
               <SignInButton>
-                <button className="btn-gradient px-5 py-1">Sign In</button>
+                <button className="btn-gradient px-4 py-1">Sign In</button>
               </SignInButton>
             </SignedOut>
             <SignedIn>
