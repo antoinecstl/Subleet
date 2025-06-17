@@ -29,17 +29,23 @@ export async function DELETE(request: Request) {  try {
     const clerkId = clientData.clerk_id;
     
     // 2. Delete from Clerk if clerk_id exists
-    if (clerkId) {
-      try {
+    if (clerkId) {      try {
         await clerkClient.users.deleteUser(clerkId);
-      } catch (clerkError: any) {
+      } catch (clerkError: unknown) {
         // If the user doesn't exist in Clerk, we should still delete from Supabase
         // But for other errors, we should fail the request
         console.error('Error deleting user from Clerk:', clerkError);
         
-        if (clerkError.status !== 404) {
+        const errorStatus = clerkError && typeof clerkError === 'object' && 'status' in clerkError 
+          ? (clerkError as { status: number }).status 
+          : null;
+        const errorMessage = clerkError instanceof Error 
+          ? clerkError.message 
+          : 'Unknown authentication error';
+        
+        if (errorStatus !== 404) {
           return NextResponse.json({ 
-            error: `Failed to delete from authentication system: ${clerkError.message}` 
+            error: `Failed to delete from authentication system: ${errorMessage}` 
           }, { status: 500 });
         }
       }

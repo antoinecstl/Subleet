@@ -142,7 +142,7 @@ export async function updateAssistant(
   model?: string
 ): Promise<Assistant> {
   try {
-    const updateParams: any = {};
+    const updateParams: { instructions?: string; model?: string } = {};
     
     if (instructions !== undefined) {
       updateParams.instructions = instructions;
@@ -278,9 +278,10 @@ export async function addFileToVectorStore(
     if (vectorStoreFile === null) {
       throw new Error("Le fichier n'a pas été trouvé dans le vector store après plusieurs tentatives");
     }
-    
-    if (vectorStoreFile.status === "failed") {
-      throw new Error(`L'ajout du fichier au vector store a échoué: ${(vectorStoreFile as any).error_message || "Erreur inconnue"}`);
+      if (vectorStoreFile.status === "failed") {
+      const errorMessage = 'last_error' in vectorStoreFile && vectorStoreFile.last_error 
+        ? vectorStoreFile.last_error.message || 'Erreur inconnue' : 'Erreur inconnue';
+      throw new Error(`L'ajout du fichier au vector store a échoué: ${errorMessage}`);
     }
 
     return {

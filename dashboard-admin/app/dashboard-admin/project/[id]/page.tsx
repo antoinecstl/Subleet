@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
@@ -14,18 +14,50 @@ interface VectorFile {
   purpose: string;
 }
 
+interface Project {
+  project_id: number;
+  project_name: string;
+  working: boolean;
+  creation_timestamp?: string;
+  project_url?: string;
+  project_owner: number;
+}
+
+interface ClientInfo {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+interface AssistantInfo {
+  id: string;
+  model: string;
+  instructions: string;
+  name?: string;
+}
+
+interface ProjectData {
+  project: Project;
+  clientInfo: ClientInfo;
+  assistant: AssistantInfo | null;
+  vectorStoreId: string | null;
+  assistantId: string | null;
+  apiKey: string | null;
+}
+
 export default function AdminProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [clientInfo, setClientInfo] = useState<any>(null);
+  const [clientInfo, setClientInfo] = useState<ClientInfo | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
   // States for assistant
-  const [assistantInfo, setAssistantInfo] = useState<any>(null);
+  const [assistantInfo, setAssistantInfo] = useState<AssistantInfo | null>(null);
   const [isEditingInstructions, setIsEditingInstructions] = useState(false);
   const [editedInstructions, setEditedInstructions] = useState('');
   const [selectedModel, setSelectedModel] = useState<string>('');
@@ -38,15 +70,31 @@ export default function AdminProjectDetail() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
   const [assistantId, setAssistantId] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);  const [copySuccess, setCopySuccess] = useState(false);
+
+  const fetchVectorFiles = useCallback(async () => {
+    try {
+      setLoadingFiles(true);
+      const response = await fetch(`/api/admin/vector-store/files?project_id=${id}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setVectorFiles(data.files || []);
+    } catch (error) {
+      console.error('Failed to fetch vector files:', error);
+      setToast({ message: 'Failed to load vector files', type: 'error' });
+    } finally {
+      setLoadingFiles(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
       try {
         setLoading(true);
         if (!bypassCache) {
-          const cachedData = getCache<any>(`cache_admin_project_${id}`);
+          const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
           if (cachedData) {
             setProject(cachedData.project);
             setClientInfo(cachedData.clientInfo);
@@ -102,7 +150,7 @@ export default function AdminProjectDetail() {
     if (project) {
       fetchVectorFiles();
     }
-  }, [project]);
+  }, [project, fetchVectorFiles]);
 
   useEffect(() => {
     if (toast) {
@@ -111,27 +159,8 @@ export default function AdminProjectDetail() {
         setToastVisible(false);
         setTimeout(() => setToast(null), 500);
       }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
-  const fetchVectorFiles = async () => {
-    try {
-      setLoadingFiles(true);
-      const response = await fetch(`/api/admin/vector-store/files?project_id=${id}`);
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      const data = await response.json();
-      setVectorFiles(data.files || []);
-    } catch (error) {
-      console.error('Failed to fetch vector files:', error);
-      setToast({ message: 'Failed to load vector files', type: 'error' });
-    } finally {
-      setLoadingFiles(false);
-    }
-  };
-
+      return () => clearTimeout(timer);    }  }, [toast]);
+  
   const toggleProjectStatus = async () => {
     if (!project || isUpdating) return;
     
@@ -166,8 +195,8 @@ export default function AdminProjectDetail() {
       // Also invalidate the client cache since project status changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       
-    } catch (err: any) {
-      setToast({ message: err.message, type: 'error' });
+    } catch (err: unknown) {
+      setToast({ message: err instanceof Error ? err.message : 'Failed to update project status', type: 'error' });
     } finally {
       setIsUpdating(false);
     }
@@ -182,9 +211,8 @@ export default function AdminProjectDetail() {
     setIsEditingInstructions(false);
     setEditedInstructions(assistantInfo?.instructions || '');
   };
-
   const saveInstructionsChanges = async () => {
-    if (!assistantId || isUpdating) return;
+    if (!assistantId || isUpdating || !project) return;
     
     setIsUpdating(true);
     try {
@@ -202,16 +230,18 @@ export default function AdminProjectDetail() {
         throw new Error(data.error || 'Failed to update assistant instructions');
       }
       
-      setAssistantInfo({
-        ...assistantInfo,
-        instructions: data.assistant.instructions
-      });
+      if (assistantInfo) {
+        setAssistantInfo({
+          ...assistantInfo,
+          instructions: data.assistant.instructions
+        });
+      }
       setToast({ message: 'Assistant instructions updated successfully', type: 'success' });
       setIsEditingInstructions(false);
       
       // Update cache
-      const cachedData = getCache<any>(`cache_admin_project_${id}`);
-      if (cachedData) {
+      const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
+      if (cachedData && cachedData.assistant) {
         setCache(`cache_admin_project_${id}`, {
           ...cachedData,
           assistant: {
@@ -226,15 +256,14 @@ export default function AdminProjectDetail() {
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       localStorage.removeItem(`cache_project_${id}`);
       
-    } catch (err: any) {
-      setToast({ message: err.message, type: 'error' });
+    } catch (err: unknown) {
+      setToast({ message: err instanceof Error ? err.message : 'Failed to update instructions', type: 'error' });
     } finally {
       setIsUpdating(false);
     }
   };
-
   const updateModel = async () => {
-    if (!assistantId || isUpdating || !selectedModel) return;
+    if (!assistantId || isUpdating || !selectedModel || !project) return;
     
     setIsUpdating(true);
     try {
@@ -252,16 +281,18 @@ export default function AdminProjectDetail() {
         throw new Error(data.error || 'Failed to update assistant model');
       }
       
-      setAssistantInfo({
-        ...assistantInfo,
-        model: data.assistant.model
-      });
+      if (assistantInfo) {
+        setAssistantInfo({
+          ...assistantInfo,
+          model: data.assistant.model
+        });
+      }
       setToast({ message: 'Assistant model updated successfully', type: 'success' });
       setIsModelChangeOpen(false);
       
       // Update cache
-      const cachedData = getCache<any>(`cache_admin_project_${id}`);
-      if (cachedData) {
+      const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
+      if (cachedData && cachedData.assistant) {
         setCache(`cache_admin_project_${id}`, {
           ...cachedData,
           assistant: {
@@ -276,8 +307,8 @@ export default function AdminProjectDetail() {
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       localStorage.removeItem(`cache_project_${id}`);
       
-    } catch (err: any) {
-      setToast({ message: err.message, type: 'error' });
+    } catch (err: unknown) {
+      setToast({ message: err instanceof Error ? err.message : 'Failed to update model', type: 'error' });
     } finally {
       setIsUpdating(false);
     }
@@ -462,11 +493,11 @@ export default function AdminProjectDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div>
-                  <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>
+                  <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>                  
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-mono bg-card-bg px-2 py-1 rounded">{project.project_id}</span>
                     <button 
-                      onClick={() => copyToClipboard(project.project_id)}
+                      onClick={() => copyToClipboard(project.project_id.toString())}
                       className={`p-1.5 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
                     >
                       <FaCopy size={14} />

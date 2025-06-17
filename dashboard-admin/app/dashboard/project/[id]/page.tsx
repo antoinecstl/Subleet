@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
@@ -15,10 +15,32 @@ interface VectorFile {
   purpose: string;
 }
 
+interface Project {
+  project_id: number;
+  project_name: string;
+  working: boolean;
+  creation_timestamp?: string;
+  project_url?: string;
+}
+
+interface AssistantInfo {
+  id: string;
+  model: string;
+  instructions: string;
+  name?: string;
+}
+
+interface ProjectData {
+  project: Project;
+  assistant: AssistantInfo | null;
+  vectorStoreId: string | null;
+  assistantId: string | null;
+}
+
 export default function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
-  const [project, setProject] = useState<any>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [editedInstructions, setEditedInstructions] = useState('');
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +49,7 @@ export default function ProjectDetail() {
   const [toastVisible, setToastVisible] = useState(false);
   
   // States for assistant
-  const [assistantInfo, setAssistantInfo] = useState<any>(null);
+  const [assistantInfo, setAssistantInfo] = useState<AssistantInfo | null>(null);
   
   // States for Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
@@ -38,13 +60,29 @@ export default function ProjectDetail() {
   const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
   const [assistantId, setAssistantId] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
+  const fetchVectorFiles = useCallback(async () => {
+    try {
+      setLoadingFiles(true);
+      const response = await fetch(`/api/public/vector-store/files?project_id=${id}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+      const data = await response.json();
+      setVectorFiles(data.files || []);
+    } catch (error) {
+      console.error('Failed to fetch vector files:', error);
+      setToast({ message: 'Failed to load vector files', type: 'error' });
+    } finally {
+      setLoadingFiles(false);
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
       try {
         setLoading(true);
         if (!bypassCache) {
-          const cachedData = getCache<any>(`cache_project_${id}`);
+          const cachedData = getCache<ProjectData>(`cache_project_${id}`);
           if (cachedData) {
             setProject(cachedData.project);
             setAssistantInfo(cachedData.assistant || null);
@@ -94,7 +132,7 @@ export default function ProjectDetail() {
     if (project) {
       fetchVectorFiles();
     }
-  }, [project]);
+  }, [project, fetchVectorFiles]);
 
   useEffect(() => {
     if (toast) {
@@ -104,24 +142,7 @@ export default function ProjectDetail() {
         setTimeout(() => setToast(null), 500);
       }, 3000);
       return () => clearTimeout(timer);
-    }
-  }, [toast]);
-  const fetchVectorFiles = async () => {
-    try {
-      setLoadingFiles(true);
-      const response = await fetch(`/api/public/vector-store/files?project_id=${id}`);
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      const data = await response.json();
-      setVectorFiles(data.files || []);
-    } catch (error) {
-      console.error('Failed to fetch vector files:', error);
-      setToast({ message: 'Failed to load vector files', type: 'error' });
-    } finally {
-      setLoadingFiles(false);
-    }
-  };
+    }  }, [toast]);
 
   const handleSaveInstructions = async () => {
     if (isUpdating) return;
@@ -133,21 +154,20 @@ export default function ProjectDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: id, instructions: editedInstructions })
       });
-      
-      if (!response.ok) {
+        if (!response.ok) {
         throw new Error(`Error: ${response.status}`);
       }
       
-      setAssistantInfo({ ...assistantInfo, instructions: editedInstructions });
+      if (assistantInfo) {
+        setAssistantInfo({ ...assistantInfo, instructions: editedInstructions });
+      }
       setIsEditing(false);
-      setToast({ message: 'Instructions updated successfully', type: 'success' });
-      
-      // Update cache
-      const cachedData = getCache<any>(`cache_project_${id}`);
-      if (cachedData) {
+      setToast({ message: 'Instructions updated successfully', type: 'success' });      // Update cache
+      const cachedData = getCache<ProjectData>(`cache_project_${id}`);
+      if (cachedData && cachedData.assistant) {
         setCache(`cache_project_${id}`, { 
           ...cachedData, 
-          assistant: { ...cachedData.assistant, instructions: editedInstructions } 
+          assistant: { ...cachedData.assistant, instructions: editedInstructions }
         });
       }
       

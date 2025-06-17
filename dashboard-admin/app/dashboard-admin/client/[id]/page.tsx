@@ -1,31 +1,53 @@
 "use client"
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
 
+interface Client {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  creation_date: string;
+}
+
+interface Project {
+  project_id: number;
+  project_name: string;
+  working: boolean;
+  creation_timestamp?: string;
+  project_url?: string;
+  description?: string;
+}
+
+interface ClientData {
+  client: Client;
+  projects: Project[];
+}
+
 export default function ClientDetail() {
   const { id } = useParams();
   const router = useRouter();
-  const [client, setClient] = useState<any>(null);
-  const [projects, setProjects] = useState<any[]>([]);
+  const [client, setClient] = useState<Client | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
   const [newProjectUrl, setNewProjectUrl] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<any>(null);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
-  const fetchClientData = async (bypassCache = false) => {
+  const fetchClientData = useCallback(async (bypassCache = false) => {
     try {
       setLoading(true);
       
       // Try to get from cache first, unless bypassing cache
       if (!bypassCache) {
-        const cachedData = getCache<any>(`cache_client_${id}`);
+        const cachedData = getCache<ClientData>(`cache_client_${id}`);
         if (cachedData) {
           setClient(cachedData.client);
           setProjects(cachedData.projects || []);
@@ -57,17 +79,16 @@ export default function ClientDetail() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
   
   const handleRefresh = () => {
     fetchClientData(true);
   };
-
   useEffect(() => {
     if (id) {
       fetchClientData();
     }
-  }, [id]);
+  }, [id, fetchClientData]);
 
   useEffect(() => {
     if (toast) {
@@ -107,10 +128,9 @@ export default function ClientDetail() {
       }
       
       // Update local state with the new project
-      setProjects([...projects, data.project]);
-      
+      setProjects([...projects, data.project]);      
       // Update cache
-      const cachedData = getCache<any>(`cache_client_${id}`);
+      const cachedData = getCache<ClientData>(`cache_client_${id}`);
       if (cachedData) {
         setCache(`cache_client_${id}`, {
           ...cachedData,
@@ -150,10 +170,9 @@ export default function ClientDetail() {
 
       // Update local state
       const updatedProjects = projects.filter(project => project.project_id !== projectId);
-      setProjects(updatedProjects);
-      
+      setProjects(updatedProjects);      
       // Update cache
-      const cachedData = getCache<any>(`cache_client_${id}`);
+      const cachedData = getCache<ClientData>(`cache_client_${id}`);
       if (cachedData) {
         setCache(`cache_client_${id}`, {
           ...cachedData,

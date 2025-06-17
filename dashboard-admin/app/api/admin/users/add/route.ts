@@ -68,20 +68,18 @@ export async function POST(request: Request) {
       message: 'User added successfully.', 
       client: clientData 
     });
-
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error adding user:', error);
 
      // Log detailed error information
-    if (error.errors) {
-      console.error('Detailed error information:', JSON.stringify(error.errors, null, 2));
-    }
-
-    // Handle specific Clerk API errors
-    if (error.clerkError) {
+    if (error && typeof error === 'object' && 'errors' in error) {
+      console.error('Detailed error information:', JSON.stringify((error as any).errors, null, 2));
+    }    // Handle specific Clerk API errors
+    if (error && typeof error === 'object' && 'clerkError' in error) {
       // This is a Clerk API error
-      const statusCode = error.status || 500;
-      const errorMessage = error.errors?.[0]?.message || 'Authentication service error';
+      const clerkError = error as { status?: number; errors?: Array<{ message: string }> };
+      const statusCode = clerkError.status || 500;
+      const errorMessage = clerkError.errors?.[0]?.message || 'Authentication service error';
       
       return NextResponse.json({ 
         error: `Authentication error: ${errorMessage}` 
@@ -89,16 +87,17 @@ export async function POST(request: Request) {
     }
     
     // Handle potential Supabase constraint errors (like duplicate entries)
-    if (error.code === '23505') {
+    if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === '23505') {
       return NextResponse.json({ 
         error: 'A user with this information already exists in the database' 
       }, { status: 409 });
     }
 
     // Generic error response
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json({ 
       error: 'Failed to add user', 
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }

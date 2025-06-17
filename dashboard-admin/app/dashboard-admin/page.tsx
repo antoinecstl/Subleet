@@ -67,13 +67,13 @@ export default function DashboardAdmin() {
       // Update cache with the new client list
       setCache('cache_admin_clients', updatedClients);
       
-      setToast({ message: data.message || "Client added successfully", type: 'success' });
+      setToast({ message: data.message || "Client added successfully", type: 'success' });     
       setShowForm(false);
       setNewName('');
       setNewEmail('');
       setNewPhone('');
-    } catch (err: any) {
-      setToast({ message: err.message, type: 'error' });
+    } catch (err: unknown) {
+      setToast({ message: err instanceof Error ? err.message : 'An error occurred', type: 'error' });
     }
   };
 

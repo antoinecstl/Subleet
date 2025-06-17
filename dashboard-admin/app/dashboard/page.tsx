@@ -8,11 +8,19 @@ import { getCache, setCache } from '@/lib/cache-utils';
 import Toast from '../components/Toast';
 import { useSubscription } from '@/lib/subscription-context';
 
+interface Project {
+  project_id: number;
+  project_name: string;
+  working: boolean;
+  creation_timestamp?: string;
+  project_url?: string;
+}
+
 export default function Dashboard() {
   const router = useRouter();
   const { user } = useUser();
   const { hasClassicPlan } = useSubscription();
-  const [projects, setProjects] = useState<any[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -40,10 +48,9 @@ export default function Dashboard() {
   const fetchUserData = async (bypassCache = false) => {
     try {
       setLoading(true);
-      
-      // Try to get from cache first unless bypassing
+        // Try to get from cache first unless bypassing
       if (!bypassCache) {
-        const cachedData = getCache<any[]>('cache_user_dashboard');
+        const cachedData = getCache<Project[]>('cache_user_dashboard');
         if (cachedData) {
           setProjects(cachedData);
           setLoading(false);
