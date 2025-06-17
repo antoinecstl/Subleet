@@ -69,12 +69,10 @@ export async function POST(request: Request) {
       client: clientData 
     });
   } catch (error: unknown) {
-    console.error('Error adding user:', error);
-
-     // Log detailed error information
+    console.error('Error adding user:', error);     // Log detailed error information
     if (error && typeof error === 'object' && 'errors' in error) {
-      console.error('Detailed error information:', JSON.stringify((error as any).errors, null, 2));
-    }    // Handle specific Clerk API errors
+      console.error('Detailed error information:', JSON.stringify((error as { errors: unknown }).errors, null, 2));
+    }// Handle specific Clerk API errors
     if (error && typeof error === 'object' && 'clerkError' in error) {
       // This is a Clerk API error
       const clerkError = error as { status?: number; errors?: Array<{ message: string }> };
