@@ -138,7 +138,6 @@ export default function ProjectDetail() {
         throw new Error(`Error: ${response.status}`);
       }
       
-      const data = await response.json();
       setAssistantInfo({ ...assistantInfo, instructions: editedInstructions });
       setIsEditing(false);
       setToast({ message: 'Instructions updated successfully', type: 'success' });
@@ -499,7 +498,7 @@ export default function ProjectDetail() {
               </button>
             </div>
             <p className="text-xs text-muted">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
-            <p className="text-xs text-muted mt-1">These documents feed your AI assistant's knowledge base.</p>
+            <p className="text-xs text-muted mt-1">These documents feed your AI assistant&aposs knowledge base.</p>
           </div>
 
           {loadingFiles ? (
@@ -550,7 +549,7 @@ export default function ProjectDetail() {
           ) : (
             <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
               <p className="text-muted">No files have been added to the knowledge base yet.</p>
-              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant's capabilities.</p>
+              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant&aposs capabilities.</p>
             </div>
           )}
         </div>

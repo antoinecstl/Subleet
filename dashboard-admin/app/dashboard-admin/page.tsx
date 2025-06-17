@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { FaSync, FaSortUp, FaSortDown } from 'react-icons/fa';
+import { FaSortUp, FaSortDown } from 'react-icons/fa';
 import Fuse from 'fuse.js';
 import { format } from 'date-fns';
 import Toast from '../components/Toast';
@@ -26,7 +26,6 @@ export default function DashboardAdmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [fuse, setFuse] = useState<Fuse<Client> | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [sortKey, setSortKey] = useState<'creation_date'>('creation_date');
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
@@ -287,7 +286,7 @@ export default function DashboardAdmin() {
                         </td>
                       </tr>
                     ) : (
-                      sortedClients.map((client, index) => (
+                      sortedClients.map((client) => (
                         <tr 
                           key={client.id} 
                           className={`cursor-pointer hover:bg-card-hover-border`}
@@ -383,7 +382,7 @@ export default function DashboardAdmin() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="glass-card p-8 rounded-xl w-96 border border-card-border animate-fadeIn">
             <h2 className="card-header text-2xl mb-4">Confirm Deletion</h2>
-            <p className="mb-6">Are you sure you want to delete the client "{clientToDelete.name}"?</p>
+            <p className="mb-6">Are you sure you want to delete the client &quot;{clientToDelete.name}&quot;?</p>
             <div className="flex justify-end gap-3">
               <button 
                 onClick={cancelDelete} 

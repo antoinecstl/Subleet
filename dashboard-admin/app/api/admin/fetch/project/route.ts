@@ -43,7 +43,7 @@ export async function GET(request: Request) {
       .single();
 
     // Fetch client info for this project
-    const { data: clientData, error: clientError } = await supabase
+    const { data: clientData } = await supabase
       .from('clients')
       .select('id, name, email, phone, creation_date')
       .eq('id', projectData.project_owner)

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { generateContactEmailHTML, generateContactEmailText } from '@/app/components/email-contact-template';
-import { ContactFormData, ContactAPIResponse, ContactAPIError } from '@/app/types/contact';
+import { ContactFormData} from '@/app/types/contact';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 

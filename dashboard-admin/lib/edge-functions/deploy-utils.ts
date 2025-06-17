@@ -69,7 +69,7 @@ export async function deployEdgeFunction(
       let errorData;
       try {
         errorData = await response.json();
-      } catch (e) {
+      } catch {
         errorData = await response.text();
       }
       throw new Error(`Failed to deploy Edge Function: ${response.status} - ${typeof errorData === 'string' ? errorData : JSON.stringify(errorData)}`);

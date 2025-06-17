@@ -11,7 +11,6 @@ export default function CreateProject() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [isCheckingProjects, setIsCheckingProjects] = useState(true);
   const [projectData, setProjectData] = useState({
     name: '',
     url: '',
@@ -42,11 +41,9 @@ export default function CreateProject() {
               return;
             }
           }
-          setIsCheckingProjects(false);
         }
       } catch (error) {
         console.error('Error checking user projects:', error);
-        setIsCheckingProjects(false);
       }
     };
 
@@ -193,7 +190,7 @@ export default function CreateProject() {
                     Website URL <span className="text-red-500">*</span>
                 </label>
                 <input
-                    type="url"
+                    type="text"
                     id="url"
                     name="url"
                     value={projectData.url}
@@ -203,7 +200,7 @@ export default function CreateProject() {
                     required
                 />
                 <p className="text-sm text-muted mt-1">
-                    The URL where the AI assistant will be integrated. For development environment, use <code>'*'</code>
+                    The URL where the AI assistant will be integrated. For development environment, use <code>*</code>
                 </p>
             </div>
             

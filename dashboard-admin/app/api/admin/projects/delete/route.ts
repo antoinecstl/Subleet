@@ -25,13 +25,13 @@ export async function DELETE(request: Request) {
       console.error('Error fetching project details:', projectError);
       // Continuer même en cas d'erreur pour ne pas bloquer la suppression
     }// Récupérer l'ID du Vector Store et de l'Assistant avant de supprimer le projet
-    const { data: vectorStoreData, error: vectorStoreError } = await supabase
+    const { data: vectorStoreData } = await supabase
       .from('vector_stores')
       .select('openai_vector_id')
       .eq('project_id', project_id)
       .single();
 
-    const { data: assistantData, error: assistantError } = await supabase
+    const { data: assistantData } = await supabase
       .from('assistants')
       .select('openai_assistant_id')
       .eq('project_id', project_id)
@@ -80,7 +80,7 @@ export async function DELETE(request: Request) {
     }
 
     // DELETE CASCADE s'occupera de supprimer les entrées dans vector_stores et assistants
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('projects')
       .delete()
       .eq('project_id', project_id);

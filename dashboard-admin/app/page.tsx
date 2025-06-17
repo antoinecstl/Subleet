@@ -3,30 +3,10 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useUser } from "@clerk/nextjs";
-import { useLanguage } from '@/lib/language-context';
 import { clearCache } from '@/lib/cache-utils';
 
 export default function Home() {
   const { user, isLoaded } = useUser();
-  const { t, language } = useLanguage();
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
-
-  // Theme detection (identique aux autres pages)
-  useEffect(() => {
-    const detectTheme = () => {
-      const isDarkMode = !document.body.classList.contains('light-theme');
-      return isDarkMode ? 'dark' : 'light';
-    };
-    const updateTheme = () => setTheme(detectTheme());
-    updateTheme();
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') updateTheme();
-      });
-    });
-    observer.observe(document.body, { attributes: true });
-    return () => observer.disconnect();
-  }, []);
 
   // Clear cache on logout
   useEffect(() => {

@@ -35,7 +35,7 @@ export default function InformationPage() {
             Enhancing Business with <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Intelligent AI</span>
           </h1>
           <p className="text-xl text-muted max-w-3xl mx-auto">
-            Discover how Subleet's AI solutions can transform your customer service, boost engagement, and streamline operations.
+            Discover how Subleet&apos;s AI solutions can transform your customer service, boost engagement, and streamline operations.
           </p>
         </div>
         {/* Features Section */}
@@ -111,7 +111,7 @@ export default function InformationPage() {
               </div>
               <h3 className="font-semibold mb-2">Customize</h3>
               <p className="text-sm text-muted">
-                Fine-tune your AI's behavior, responses, and capabilities to match your brand.
+                Fine-tune your AI&apos;s behavior, responses, and capabilities to match your brand.
               </p>
             </div>
             {/* Step 4 */}

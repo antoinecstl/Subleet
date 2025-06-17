@@ -293,7 +293,7 @@ export default function ClientDetail() {
               </div>
               <h2 className="text-xl font-medium mb-2">No projects yet</h2>
               <p className="text-center text-muted mb-4 max-w-md">
-                This client doesn't have any AI projects. Click "Add Project" to create one.
+                This client doesn&apos;t have any AI projects. Click &quot;Add Project&quot; to create one.
               </p>
             </div>
           ) : (
@@ -397,7 +397,7 @@ export default function ClientDetail() {
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
           <div className="glass-card p-8 rounded-xl w-96 border border-card-border animate-fadeIn">
             <h2 className="card-header text-2xl mb-4">Confirm Deletion</h2>
-            <p className="mb-6">Are you sure you want to delete the project "{projectToDelete.project_name}"?</p>
+            <p className="mb-6">Are you sure you want to delete the project &quot;{projectToDelete.project_name}&quot;?</p>
             <p className="mb-6 text-sm text-error">This action cannot be undone and will remove all associated data.</p>
             <div className="flex justify-end gap-3">
               <button 

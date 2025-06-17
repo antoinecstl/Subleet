@@ -1,12 +1,11 @@
 "use client"
 
-import Link from "next/link"
 import { useUser } from "@clerk/nextjs"
 import { PricingTable } from '@clerk/nextjs'
 import { useState, useEffect, useRef } from "react"
 
 export default function PricingPage() {
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [showContactModal, setShowContactModal] = useState(false);  const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
@@ -116,7 +115,7 @@ export default function PricingPage() {
             Simple, Transparent <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">Pricing</span>
           </h1>
           <p className="text-lg text-muted mb-6">
-            Choose the plan that's right for your business needs
+            Choose the plan that&apos;s right for your business needs
           </p>
         </div>
         
@@ -130,7 +129,7 @@ export default function PricingPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-bold mb-1">Standard Plan</h2>
-                <p className="text-base text-muted">Choose the plan that's right for your business</p>
+                <p className="text-base text-muted">Choose the plan that&apos;s right for your business</p>
               </div>
             </div>
             <div className="flex-1">
@@ -243,7 +242,7 @@ export default function PricingPage() {
             <div>              
               <h3 className="text-lg font-semibold mb-2">Can I create custom AI behaviors?</h3>
               <p className="text-muted mb-6">
-                Yes, all plans allow you to customize your AI's behavior, knowledge, and responses.
+                Yes, all plans allow you to customize your AI&apos;s behavior, knowledge, and responses.
               </p>
             </div>
           </div>

@@ -10,7 +10,7 @@ import { useSubscription } from '@/lib/subscription-context';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { user, isLoaded } = useUser();
+  const { user } = useUser();
   const { hasClassicPlan } = useSubscription();
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,68 +79,13 @@ export default function Dashboard() {
     }
   };
 
-  const projectCards = () => {
-    if (loading) {
-      return (
-        <div className="min-h-[200px] flex items-center justify-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </div>
-      );
-    }
-
-    if (projects.length === 0) {
-      return (
-        <div className="min-h-[200px] flex flex-col items-center justify-center p-8 glass-card rounded-xl">
-          <div className="w-16 h-16 bg-gray-200/20 rounded-full flex items-center justify-center mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-medium mb-2">No projects yet</h2>
-          <p className="text-center text-muted mb-4 max-w-md">
-            You don't have any AI projects set up yet.
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {projects.map((project) => (
-          <Link href={`/dashboard/project/${project.project_id}`} key={project.project_id} className="hover:no-underline">
-            <div className="glass-card rounded-xl p-6 h-full flex flex-col hover-scale">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="card-header mb-0 text-xl">
-                  {project.project_name}
-                </h3>
-                <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
-                  {project.working ? 'Active' : 'Inactive'}
-                </div>
-              </div>
-              <div className="text-sm text-muted mb-4 flex-grow">
-                <p className="mb-2">
-                  {project.description || 'No description available'}
-                </p>
-                {project.creation_timestamp && (
-                  <p className="text-xs mt-3">
-                    Created on {new Date(project.creation_timestamp).toLocaleDateString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-    );
-  };
-
   // Handler for create project button
   const handleCreateProject = () => {
     if (hasClassicPlan) {
       if (projects.length >= 1) {
         // User already has the maximum number of projects allowed
         setToast({
-          message: 'Vous avez atteint le nombre maximum de projets autorisés avec votre plan actuel',
+          message: 'You have reached the maximum number of projects allowed with your current plan',
           type: 'error'
         });
       } else {
@@ -247,9 +192,6 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="text-sm text-muted mb-4 flex-grow">
-                    <p className="mb-2">
-                      {project.description || 'No description available'}
-                    </p>
                     {project.creation_timestamp && (
                       <p className="text-xs mt-3">
                         Created on {new Date(project.creation_timestamp).toLocaleDateString()}

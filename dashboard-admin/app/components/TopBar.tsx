@@ -1,14 +1,12 @@
 "use client"
 import { usePathname } from "next/navigation";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
-import { useLanguage } from "../../lib/language-context";
 import { useState, useEffect } from "react";
 
 export default function TopBar() {
   const pathname = usePathname();
   const isSignInPage = pathname === "/sign-in";
-  const { t } = useLanguage();
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {

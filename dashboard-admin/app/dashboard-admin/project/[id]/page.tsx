@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
 import { getCache, setCache } from '@/lib/cache-utils';
 import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
@@ -42,9 +41,6 @@ export default function AdminProjectDetail() {
   const [apiKey, setApiKey] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const [isEditingContext, setIsEditingContext] = useState(false);
-  const [editedContext, setEditedContext] = useState('');
-
   useEffect(() => {
     const fetchProjectData = async (bypassCache = false) => {
       try {
@@ -56,7 +52,6 @@ export default function AdminProjectDetail() {
             setClientInfo(cachedData.clientInfo);
             setAssistantInfo(cachedData.assistant);
             setEditedInstructions(cachedData.assistant?.instructions || '');
-            setEditedContext(cachedData.project?.context || '');
             setVectorStoreId(cachedData.vectorStoreId || null);
             setAssistantId(cachedData.assistantId || null);
             setApiKey(cachedData.apiKey || null);
@@ -75,7 +70,6 @@ export default function AdminProjectDetail() {
           setClientInfo(data.clientInfo);
           setAssistantInfo(data.assistant || null);
           setEditedInstructions(data.assistant?.instructions || '');
-          setEditedContext(data.project?.context || '');
           setVectorStoreId(data.vectorStoreId || null);
           setAssistantId(data.assistantId || null);
           setApiKey(data.apiKey || null);
@@ -711,7 +705,7 @@ export default function AdminProjectDetail() {
               </button>
             </div>
             <p className="text-xs text-muted">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
-            <p className="text-xs text-muted mt-1">These documents feed your AI assistant's knowledge base.</p>
+            <p className="text-xs text-muted mt-1">These documents feed your AI assistant&apos;s knowledge base.</p>
           </div>
 
           {loadingFiles ? (
@@ -762,7 +756,7 @@ export default function AdminProjectDetail() {
           ) : (
             <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
               <p className="text-muted">No files have been added to the knowledge base yet.</p>
-              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant's capabilities.</p>
+              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant&apos;s capabilities.</p>
             </div>
           )}
         </div>

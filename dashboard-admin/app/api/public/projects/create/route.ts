@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { currentUser } from '@clerk/nextjs/server';
-import { auth } from '@clerk/nextjs/server';
 import dotenv from 'dotenv';
 import { createVectorStore, createAssistant, SUPPORTED_MODELS } from '@/lib/vector-store-utils';
 import { deployEdgeFunction } from '@/lib/edge-functions/deploy-utils';

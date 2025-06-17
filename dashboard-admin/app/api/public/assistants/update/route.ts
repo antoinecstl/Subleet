@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth, currentUser } from '@clerk/nextjs/server';
-import { updateAssistant, getAssistant } from '@/lib/vector-store-utils';
+import { updateAssistant } from '@/lib/vector-store-utils';
 import dotenv from 'dotenv';
 
 dotenv.config();
