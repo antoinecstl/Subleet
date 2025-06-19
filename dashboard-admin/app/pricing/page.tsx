@@ -68,7 +68,6 @@ export default function PricingPage() {
       document.removeEventListener('mousedown', handleClickOutside);
     }    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showContactModal]);
-
   // Fonction pour soumettre le formulaire de contact
   const handleSubmitContact = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,15 +88,28 @@ export default function PricingPage() {
         }),
       });
 
-      const data = await response.json();
+      // Vérifier si la réponse est bien du JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Réponse serveur invalide. Veuillez réessayer.');
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('Erreur de parsing JSON:', parseError);
+        throw new Error('Réponse serveur invalide. Veuillez réessayer.');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'An error happened');
+        throw new Error(data.error || 'Une erreur est survenue');
       }      setSubmitted(true);
       // Réinitialiser le formulaire
       setForm({ name: '', email: '', phone: '', message: '' });
     } catch (error) {
-      setSubmitError(error instanceof Error ? error.message : 'An error happened');
+      console.error('Erreur lors de l\'envoi:', error);
+      setSubmitError(error instanceof Error ? error.message : 'An error occurred while sending your message. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }

@@ -7,8 +7,28 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
-    const body: ContactFormData = await request.json();
-      // Validation des données
+    // Vérifier le Content-Type
+    const contentType = request.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return NextResponse.json(
+        { error: 'Content-Type doit être application/json' },
+        { status: 400 }
+      );
+    }
+
+    // Parser le JSON avec gestion d'erreur
+    let body: ContactFormData;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('Erreur de parsing JSON:', parseError);
+      return NextResponse.json(
+        { error: 'Données JSON invalides' },
+        { status: 400 }
+      );
+    }
+
+    // Validation des données
     if (!body.name || !body.email || !body.phone || !body.message) {
       return NextResponse.json(
         { error: 'Tous les champs sont requis' },
@@ -66,9 +86,8 @@ export async function POST(request: NextRequest) {
       message: 'Votre message a été envoyé avec succès. Nous vous recontacterons bientôt !',
       emailId: emailResponse.data?.id
     });
-
   } catch (error) {
-    console.error('Erreur lors de l\'envoi de l\'email:', error);
+    console.error('Erreur dans l\'API contact:', error);
     
     // Gestion des erreurs spécifiques à Resend
     if (error instanceof Error) {
@@ -85,6 +104,13 @@ export async function POST(request: NextRequest) {
           { status: 429 }
         );
       }
+      
+      // Log l'erreur complète pour debugging
+      console.error('Détails de l\'erreur:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
     }
 
     return NextResponse.json(
