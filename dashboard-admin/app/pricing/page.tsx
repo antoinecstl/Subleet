@@ -100,7 +100,7 @@ export default function PricingPage() {
           } else {
             throw new Error('Réponse serveur non-JSON');
           }
-        } catch (parseError) {
+        } catch {
           throw new Error(`Erreur serveur (${response.status}). Veuillez réessayer.`);
         }
         
@@ -113,11 +113,10 @@ export default function PricingPage() {
         throw new Error('Réponse serveur invalide. Veuillez réessayer.');
       }
 
-      let data;
       try {
-        data = await response.json();
-      } catch (parseError) {
-        console.error('Erreur de parsing JSON success:', parseError);
+        await response.json();
+      } catch {
+        console.error('Erreur de parsing JSON success');
         throw new Error('Réponse serveur invalide. Veuillez réessayer.');
       }
 

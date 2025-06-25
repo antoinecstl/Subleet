@@ -142,8 +142,6 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  const hasApiKey = !!process.env.RESEND_API_KEY;
-  
   return NextResponse.json({
     message: 'API de contact',
     timestamp: new Date().toISOString(),
