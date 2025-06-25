@@ -7,24 +7,56 @@ import { useState, useEffect } from "react";
 export default function TopBar() {
   const pathname = usePathname();
   const isSignInPage = pathname === "/sign-in";
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    
+    // Vérifier d'abord les préférences système
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" | null;
+    
+    let initialTheme: "light" | "dark";
+    
     if (savedTheme) {
-      setTheme(savedTheme);
-      document.body.classList.toggle("light-theme", savedTheme === "light");
+      initialTheme = savedTheme;
     } else {
-      setTheme("light");
-      document.body.classList.add("light-theme");
-      localStorage.setItem("theme", "light");
+      initialTheme = systemPrefersDark ? "dark" : "light";
+      localStorage.setItem("theme", initialTheme);
     }
+    
+    setTheme(initialTheme);
+    applyTheme(initialTheme);
   }, []);
 
+  const applyTheme = (newTheme: "light" | "dark") => {
+    const root = document.documentElement;
+    const body = document.body;
+    
+    // Supprimer toutes les classes de thème existantes
+    body.classList.remove("light-theme", "dark-theme");
+    root.classList.remove("light-theme", "dark-theme");
+    
+    // Appliquer la nouvelle classe de thème
+    if (newTheme === "light") {
+      body.classList.add("light-theme");
+      root.classList.add("light-theme");
+    } else {
+      body.classList.add("dark-theme");
+      root.classList.add("dark-theme");
+    }
+    
+    // Forcer le re-render en modifiant une propriété CSS
+    root.style.setProperty('--theme-transition', 'all 0.3s ease');
+  };
+
   const toggleTheme = () => {
+    if (!mounted) return;
+    
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    document.body.classList.toggle("light-theme", newTheme === "light");
+    applyTheme(newTheme);
     localStorage.setItem("theme", newTheme);
   };
 
@@ -33,6 +65,26 @@ export default function TopBar() {
     if (path !== '/' && pathname.startsWith(path)) return true;
     return false;
   };
+
+  // Empêcher le rendu avant la synchronisation du thème
+  if (!mounted) {
+    return (
+      <header className="w-full backdrop-blur-md bg-black/30 text-white py-4 px-8 flex justify-between items-center shadow-lg sticky top-0 z-50 border-b border-white/10">
+        <div className="flex items-center h-full">
+          <Link href="/" className="group flex items-center">
+            <h1 className="text-2xl font-bold cursor-pointer flex items-center my-0">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+                Subleet
+              </span>
+            </h1>
+          </Link>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="w-10 h-6 bg-gray-600 rounded-full"></div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header

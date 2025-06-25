@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 :root {
-  /* Dark theme variables - used when light-theme class is not applied */
+  /* Variables par défaut (dark theme) */
   --background: #070217;
   --foreground: #f5f5f7;
   --table-bg: #12103A;
@@ -51,110 +51,118 @@
   --border-radius-lg: 1rem;
   --border-radius-xl: 1.5rem;
   --border-radius-full: 9999px;
+  --theme-transition: all 0.3s ease;
 }
 
-.light-theme {
+/* Classes explicites pour les thèmes */
+.light-theme,
+:root.light-theme,
+html.light-theme {
   /* Light theme variables */
-  --background: #f4f7ff;
-  --foreground: #0f172a;
-  --table-bg: #ffffff;
-  --table-border: #e5e7eb;
-  --table-text: #0f172a;
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --secondary: #9333ea;
-  --accent: #db2777;
-  --card-bg: rgba(255, 255, 255, 0.9);
-  --card-border: rgba(209, 213, 219, 0.5);
-  --card-hover-border: rgba(99, 102, 241, 0.5);
-  --button-gradient-from: #4f46e5;
-  --button-gradient-to: #9333ea;
-  --button-hover-from: #4338ca;
-  --button-hover-to: #7e22ce;
-  --success: #059669;
-  --success-light: #34d399;
-  --error: #dc2626;
-  --error-light: #f87171;
-  --warning: #d97706;
-  --warning-light: #fbbf24;
-  --info: #2563eb;
-  --info-light: #60a5fa;
-  --text-muted: rgba(15, 23, 42, 0.65);
-  --text-default: rgba(15, 23, 42, 0.95);
-  --text-heading: rgba(15, 23, 42, 1);
-  --border-subtle: rgba(15, 23, 42, 0.1);
-  --border-default: rgba(15, 23, 42, 0.2);
-  --border-emphasis: rgba(15, 23, 42, 0.3);
-  --input-bg: rgba(255, 255, 255, 0.8);
-  --input-border: rgba(209, 213, 219, 0.5);
-  --input-focus-border: rgba(79, 70, 229, 0.6);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-  --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  --shadow-highlight: 0 0 20px rgba(99, 102, 241, 0.4);
+  --background: #f4f7ff !important;
+  --foreground: #0f172a !important;
+  --table-bg: #ffffff !important;
+  --table-border: #e5e7eb !important;
+  --table-text: #0f172a !important;
+  --primary: #4f46e5 !important;
+  --primary-light: #6366f1 !important;
+  --secondary: #9333ea !important;
+  --accent: #db2777 !important;
+  --card-bg: rgba(255, 255, 255, 0.9) !important;
+  --card-border: rgba(209, 213, 219, 0.5) !important;
+  --card-hover-border: rgba(99, 102, 241, 0.5) !important;
+  --button-gradient-from: #4f46e5 !important;
+  --button-gradient-to: #9333ea !important;
+  --button-hover-from: #4338ca !important;
+  --button-hover-to: #7e22ce !important;
+  --success: #059669 !important;
+  --success-light: #34d399 !important;
+  --error: #dc2626 !important;
+  --error-light: #f87171 !important;
+  --warning: #d97706 !important;
+  --warning-light: #fbbf24 !important;
+  --info: #2563eb !important;
+  --info-light: #60a5fa !important;
+  --text-muted: rgba(15, 23, 42, 0.65) !important;
+  --text-default: rgba(15, 23, 42, 0.95) !important;
+  --text-heading: rgba(15, 23, 42, 1) !important;
+  --border-subtle: rgba(15, 23, 42, 0.1) !important;
+  --border-default: rgba(15, 23, 42, 0.2) !important;
+  --border-emphasis: rgba(15, 23, 42, 0.3) !important;
+  --input-bg: rgba(255, 255, 255, 0.8) !important;
+  --input-border: rgba(209, 213, 219, 0.5) !important;
+  --input-focus-border: rgba(79, 70, 229, 0.6) !important;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+  --shadow-highlight: 0 0 20px rgba(99, 102, 241, 0.4) !important;
 }
 
-@media (prefers-color-scheme: light) {
-  :root:not(.dark-theme) {
-    /* Apply light theme to root if no explicit theme class and OS prefers light mode */
-    --background: #f4f7ff;
-    --foreground: #0f172a;
-    --table-bg: #ffffff;
-    --table-border: #e5e7eb;
-    --table-text: #0f172a;
-    --primary: #4f46e5;
-    --primary-light: #6366f1;
-    --secondary: #9333ea;
-    --accent: #db2777;
-    --card-bg: rgba(255, 255, 255, 0.9);
-    --card-border: rgba(209, 213, 219, 0.5);
-    --card-hover-border: rgba(99, 102, 241, 0.5);
-    --button-gradient-from: #4f46e5;
-    --button-gradient-to: #9333ea;
-    --button-hover-from: #4338ca;
-    --button-hover-to: #7e22ce;
-    --success: #059669;
-    --success-light: #34d399;
-    --error: #dc2626;
-    --error-light: #f87171;
-    --warning: #d97706;
-    --warning-light: #fbbf24;
-    --info: #2563eb;
-    --info-light: #60a5fa;
-    --text-muted: rgba(15, 23, 42, 0.65);
-    --text-default: rgba(15, 23, 42, 0.95);
-    --text-heading: rgba(15, 23, 42, 1);
-    --border-subtle: rgba(15, 23, 42, 0.1);
-    --border-default: rgba(15, 23, 42, 0.2);
-    --border-emphasis: rgba(15, 23, 42, 0.3);
-    --input-bg: rgba(255, 255, 255, 0.8);
-    --input-border: rgba(209, 213, 219, 0.5);
-    --input-focus-border: rgba(79, 70, 229, 0.6);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
-    --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-    --shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-    --shadow-highlight: 0 0 20px rgba(99, 102, 241, 0.4);
-  }
+.dark-theme,
+:root.dark-theme,
+html.dark-theme {
+  /* Dark theme variables explicites */
+  --background: #070217 !important;
+  --foreground: #f5f5f7 !important;
+  --table-bg: #12103A !important;
+  --table-border: #374151 !important;
+  --table-text: #f5f5f7 !important;
+  --primary: #6366f1 !important;
+  --primary-light: #818cf8 !important;
+  --secondary: #a855f7 !important;
+  --accent: #f472b6 !important;
+  --card-bg: rgba(255, 255, 255, 0.08) !important;
+  --card-border: rgba(255, 255, 255, 0.12) !important;
+  --card-hover-border: rgba(255, 255, 255, 0.2) !important;
+  --button-gradient-from: #6366f1 !important;
+  --button-gradient-to: #a855f7 !important;
+  --button-hover-from: #4f46e5 !important;
+  --button-hover-to: #9333ea !important;
+  --success: #10b981 !important;
+  --success-light: #6ee7b7 !important;
+  --error: #ef4444 !important;
+  --error-light: #fca5a5 !important;
+  --warning: #f59e0b !important;
+  --warning-light: #fcd34d !important;
+  --info: #3b82f6 !important;
+  --info-light: #93c5fd !important;
+  --text-muted: rgba(255, 255, 255, 0.6) !important;
+  --text-default: rgba(255, 255, 255, 0.9) !important;
+  --text-heading: rgba(255, 255, 255, 0.95) !important;
+  --border-subtle: rgba(255, 255, 255, 0.1) !important;
+  --border-default: rgba(255, 255, 255, 0.2) !important;
+  --border-emphasis: rgba(255, 255, 255, 0.3) !important;
+  --input-bg: rgba(255, 255, 255, 0.05) !important;
+  --input-border: rgba(255, 255, 255, 0.15) !important;
+  --input-focus-border: rgba(99, 102, 241, 0.6) !important;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+  --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  --shadow-highlight: 0 0 15px rgba(99, 102, 241, 0.5) !important;
 }
+
+/* Supprimer la logique @media car elle peut causer des conflits */
 
 body {
-  @apply text-foreground bg-background font-sans transition-colors duration-300;
+  @apply text-foreground bg-background font-sans;
+  transition: var(--theme-transition);
 }
 
 body.light-theme {
   background-image: 
     radial-gradient(circle at 20% 35%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 75% 70%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
-    radial-gradient(circle at 50% 20%, rgba(244, 114, 182, 0.08) 0%, transparent 50%);
+    radial-gradient(circle at 50% 20%, rgba(244, 114, 182, 0.08) 0%, transparent 50%) !important;
   background-attachment: fixed;
 }
 
+body.dark-theme,
 body:not(.light-theme) {
   background-image: 
     radial-gradient(circle at 20% 35%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-    radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+    radial-gradient(circle at 75% 75%, rgba(168, 85, 247, 0.15) 0%, transparent 50%) !important;
   background-attachment: fixed;
 }
 
