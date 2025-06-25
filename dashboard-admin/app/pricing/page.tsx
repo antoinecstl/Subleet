@@ -79,7 +79,8 @@ export default function PricingPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        },        body: JSON.stringify({
+        },
+        body: JSON.stringify({
           name: form.name,
           email: form.email,
           phone: form.phone,
@@ -87,6 +88,24 @@ export default function PricingPage() {
           source: 'Pricing Page'
         }),
       });
+
+      // Vérifier le statut de la réponse
+      if (!response.ok) {
+        // Essayer de parser la réponse d'erreur
+        let errorData;
+        try {
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            throw new Error('Réponse serveur non-JSON');
+          }
+        } catch (parseError) {
+          throw new Error(`Erreur serveur (${response.status}). Veuillez réessayer.`);
+        }
+        
+        throw new Error(errorData.error || `Erreur ${response.status}`);
+      }
 
       // Vérifier si la réponse est bien du JSON
       const contentType = response.headers.get('content-type');
@@ -98,18 +117,21 @@ export default function PricingPage() {
       try {
         data = await response.json();
       } catch (parseError) {
-        console.error('Erreur de parsing JSON:', parseError);
+        console.error('Erreur de parsing JSON success:', parseError);
         throw new Error('Réponse serveur invalide. Veuillez réessayer.');
       }
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Une erreur est survenue');
-      }      setSubmitted(true);
-      // Réinitialiser le formulaire
+      setSubmitted(true);
       setForm({ name: '', email: '', phone: '', message: '' });
+      
     } catch (error) {
       console.error('Erreur lors de l\'envoi:', error);
-      setSubmitError(error instanceof Error ? error.message : 'An error occurred while sending your message. Please try again later.');
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        setSubmitError('Erreur de connexion. Vérifiez votre connexion internet et réessayez.');
+      } else {
+        setSubmitError(error instanceof Error ? error.message : 'Une erreur est survenue lors de l\'envoi de votre message. Veuillez réessayer plus tard.');
+      }
     } finally {
       setIsSubmitting(false);
     }

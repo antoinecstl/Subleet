@@ -7,6 +7,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
   try {
+    // Vérifier que la clé API est présente
+    if (!process.env.RESEND_API_KEY) {
+      console.error('RESEND_API_KEY non configurée');
+      return NextResponse.json(
+        { error: 'Service email non configuré' },
+        { status: 500 }
+      );
+    }
+
     // Vérifier le Content-Type
     const contentType = request.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
@@ -52,7 +61,9 @@ export async function POST(request: NextRequest) {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
-    });    const emailProps = {
+    });
+
+    const emailProps = {
       name: body.name,
       email: body.email,
       phone: body.phone,
@@ -67,9 +78,9 @@ export async function POST(request: NextRequest) {
 
     // Envoi de l'email avec Resend
     const emailResponse = await resend.emails.send({
-      from: 'Contact <contact@contact.subleet.com>', // Vous pouvez changer cela quand vous aurez votre domaine vérifié
+      from: 'Contact <contact@contact.subleet.com>',
       to: ['contact@subleet.com'],
-      replyTo: body.email, // Permet de répondre directement au client
+      replyTo: body.email,
       subject: `Nouvelle demande de contact - ${body.name}`,
       html: htmlContent,
       text: textContent,      
@@ -86,31 +97,41 @@ export async function POST(request: NextRequest) {
       message: 'Votre message a été envoyé avec succès. Nous vous recontacterons bientôt !',
       emailId: emailResponse.data?.id
     });
+    
   } catch (error) {
     console.error('Erreur dans l\'API contact:', error);
     
     // Gestion des erreurs spécifiques à Resend
     if (error instanceof Error) {
-      if (error.message.includes('API key')) {
+      // Erreurs spécifiques Resend
+      if (error.message.includes('API key') || error.message.includes('Unauthorized')) {
         return NextResponse.json(
           { error: 'Erreur de configuration du service email' },
           { status: 500 }
         );
       }
       
-      if (error.message.includes('rate limit')) {
+      if (error.message.includes('rate limit') || error.message.includes('Too Many Requests')) {
         return NextResponse.json(
           { error: 'Trop de tentatives. Veuillez réessayer dans quelques minutes.' },
           { status: 429 }
         );
       }
-      
-      // Log l'erreur complète pour debugging
-      console.error('Détails de l\'erreur:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      });
+
+      if (error.message.includes('domain') || error.message.includes('verified')) {
+        return NextResponse.json(
+          { error: 'Erreur de configuration du domaine email' },
+          { status: 500 }
+        );
+      }
+
+      // Retourner l'erreur spécifique en développement
+      if (process.env.NODE_ENV === 'development') {
+        return NextResponse.json(
+          { error: `Erreur Resend: ${error.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json(
@@ -120,10 +141,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Optionnel : Méthode GET pour vérifier que l'API fonctionne
 export async function GET() {
+  const hasApiKey = !!process.env.RESEND_API_KEY;
+  
   return NextResponse.json({
-    message: 'API de contact fonctionnelle',
-    timestamp: new Date().toISOString()
+    message: 'API de contact',
+    timestamp: new Date().toISOString(),
+    route: 'contact'
   });
 }
