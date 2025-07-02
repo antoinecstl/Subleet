@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 
 export default function CacheDebugger() {
-  const [cacheEntries, setCacheEntries] = useState<{key: string, data: any}[]>([]);
+  const [cacheEntries, setCacheEntries] = useState<{key: string, data: Record<string, unknown>}[]>([]);
   const [isVisible, setIsVisible] = useState(false);
 
   const refreshCacheEntries = () => {
-    const entries: {key: string, data: any}[] = [];
+    const entries: {key: string, data: Record<string, unknown>}[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key?.startsWith('cache_')) {
@@ -15,8 +15,8 @@ export default function CacheDebugger() {
           const value = localStorage.getItem(key);
           const parsed = value ? JSON.parse(value) : null;
           entries.push({ key: key.replace('cache_', ''), data: parsed });
-        } catch (e) {
-          entries.push({ key: key.replace('cache_', ''), data: 'Error parsing' });
+        } catch {
+          entries.push({ key: key.replace('cache_', ''), data: { error: 'Error parsing' } });
         }
       }
     }

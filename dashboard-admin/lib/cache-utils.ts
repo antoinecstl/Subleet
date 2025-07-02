@@ -16,7 +16,7 @@ export interface CacheOptions {
 }
 
 // Gestionnaire d'événements pour synchroniser entre onglets
-const cacheEventListeners = new Map<string, ((data: any) => void)[]>();
+const cacheEventListeners = new Map<string, ((data: unknown) => void)[]>();
 
 // Génère un ID de session unique
 function getSessionId(): string {
@@ -39,7 +39,7 @@ export function getCurrentUser(): string | null {
 }
 
 // Vérifie si le cache appartient à l'utilisateur actuel
-function isValidForCurrentUser(cacheItem: CacheItem<any>): boolean {
+function isValidForCurrentUser(cacheItem: CacheItem<unknown>): boolean {
   const currentUser = getCurrentUser();
   if (!currentUser) return false;
   
@@ -59,8 +59,7 @@ export function setCache<T>(
   try {
     const { 
       duration = DEFAULT_CACHE_DURATION, 
-      userId = getCurrentUser(),
-      persistent = false 
+      userId = getCurrentUser()
     } = options;
 
     const cacheItem: CacheItem<T> = {
@@ -145,7 +144,7 @@ export function clearUserCache(): void {
             keysToRemove.push(storageKey);
           }
         }
-      } catch (error) {
+      } catch {
         // Si on ne peut pas parser, on supprime par sécurité
         keysToRemove.push(storageKey);
       }
@@ -175,7 +174,7 @@ export function cleanExpiredCache(): void {
             keysToRemove.push(storageKey);
           }
         }
-      } catch (error) {
+      } catch {
         keysToRemove.push(storageKey);
       }
     }
@@ -185,7 +184,7 @@ export function cleanExpiredCache(): void {
 }
 
 // Synchronisation entre onglets
-function notifyTabsOfCacheUpdate(key: string, data: any): void {
+function notifyTabsOfCacheUpdate(key: string, data: unknown): void {
   if (typeof window !== 'undefined') {
     window.postMessage({
       type: 'CACHE_UPDATE',
@@ -215,7 +214,7 @@ function notifyTabsOfUserLogout(): void {
 // Écouter les événements de cache
 export function onCacheUpdate<T>(key: string, callback: (data: T | null) => void): () => void {
   const listeners = cacheEventListeners.get(key) || [];
-  listeners.push(callback);
+  listeners.push(callback as (data: unknown) => void);
   cacheEventListeners.set(key, listeners);
 
   // Écouter les messages entre onglets
@@ -225,7 +224,7 @@ export function onCacheUpdate<T>(key: string, callback: (data: T | null) => void
     const { type, key: eventKey, data } = event.data;
     
     if (type === 'CACHE_UPDATE' && eventKey === key) {
-      callback(data);
+      callback(data as T);
     } else if (type === 'CACHE_INVALIDATE' && (!eventKey || eventKey === key)) {
       callback(null);
     } else if (type === 'USER_LOGOUT') {
@@ -238,7 +237,7 @@ export function onCacheUpdate<T>(key: string, callback: (data: T | null) => void
   // Fonction de nettoyage
   return () => {
     const listeners = cacheEventListeners.get(key) || [];
-    const index = listeners.indexOf(callback);
+    const index = listeners.indexOf(callback as (data: unknown) => void);
     if (index > -1) {
       listeners.splice(index, 1);
     }

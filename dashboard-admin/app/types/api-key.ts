@@ -37,7 +37,7 @@ export interface ProjectCreationResponse {
   };
   vector_store_id: string;
   assistant_id: string | null;
-  edge_function: any | null;
+  edge_function: Record<string, unknown> | null;
   edge_function_error: string | null;
   api_key: string;
 }
@@ -95,7 +95,7 @@ export enum ApiKeyStatus {
 export interface ApiKeyError {
   code: string;
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export class ApiKeyNotFoundError extends Error {

@@ -29,7 +29,7 @@ export function useApiKey(projectId: string) {
       } else {
         setState(prev => ({ ...prev, isLoading: false }));
       }
-    } catch (error) {
+    } catch {
       setState(prev => ({ 
         ...prev, 
         error: 'Failed to check API key status', 
@@ -71,7 +71,7 @@ export function useApiKey(projectId: string) {
         }));
         return null;
       }
-    } catch (error) {
+    } catch {
       setState(prev => ({ 
         ...prev, 
         error: 'An error occurred while fetching the API key', 
@@ -85,7 +85,7 @@ export function useApiKey(projectId: string) {
     if (projectId) {
       checkApiKeyStatus();
     }
-  }, [projectId]);
+  }, [projectId, checkApiKeyStatus]);
 
   return {
     ...state,

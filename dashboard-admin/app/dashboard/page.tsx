@@ -43,8 +43,7 @@ export default function Dashboard() {
     data: projects,
     isLoading: loading,
     error,
-    revalidate,
-    mutate: mutateProjects
+    revalidate
   } = useCache<Project[]>(
     'user_dashboard',
     fetchUserDashboard,
@@ -85,7 +84,7 @@ export default function Dashboard() {
         message: 'Dashboard data refreshed successfully',
         type: 'success'
       });
-    } catch (error) {
+    } catch {
       setToast({
         message: 'Failed to refresh dashboard data',
         type: 'error'

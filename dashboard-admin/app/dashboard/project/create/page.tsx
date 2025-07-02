@@ -119,7 +119,7 @@ export default function CreateProject() {
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
-                <span>During development, you can use "*" as a URL wildcard; remember to replace it with your real production URL before going live.</span>
+                <span>During development, you can use &ldquo;*&rdquo; as a URL wildcard; remember to replace it with your real production URL before going live.</span>
               </li>
             </ul>
           </div>
