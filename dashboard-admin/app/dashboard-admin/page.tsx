@@ -6,7 +6,7 @@ import Fuse from 'fuse.js';
 import { format } from 'date-fns';
 import Toast from '../components/Toast';
 import { useRouter } from 'next/navigation';
-import { getCache, setCache } from '../../lib/cache-utils';
+import { useCacheList } from '@/hooks/useCache';
 import { useUser } from "@clerk/nextjs";
 
 interface Client {
@@ -22,19 +22,55 @@ export default function DashboardAdmin() {
   const router = useRouter();
   const { user } = useUser();
   const [showForm, setShowForm] = useState(false);
-  const [clients, setClients] = useState<Client[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [fuse, setFuse] = useState<Fuse<Client> | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
   // Form states for adding a new user
   const [newName, setNewName] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPhone, setNewPhone] = useState('');
+
+  // Fonction pour récupérer les clients
+  const fetchClients = async (): Promise<Client[]> => {
+    const response = await fetch('/api/admin/fetch/dashboard');
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  };
+
+  // Utiliser le cache pour les clients
+  const {
+    data: clients,
+    isLoading,
+    error,
+    addItem,
+    removeItem,
+    revalidate
+  } = useCacheList<Client>(
+    'admin_clients',
+    fetchClients,
+    {
+      userId: user?.id,
+      duration: 5 * 60 * 1000, // 5 minutes
+      revalidateOnFocus: true,
+      enabled: !!user // Seulement si l'utilisateur est connecté
+    }
+  );
+
+  // Gérer les erreurs
+  useEffect(() => {
+    if (error) {
+      setToast({
+        message: error.message || 'Failed to fetch clients data',
+        type: 'error'
+      });
+    }
+  }, [error]);
 
   // Handle adding a new user
   const handleAddUser = async (e: React.FormEvent) => {
@@ -60,12 +96,8 @@ export default function DashboardAdmin() {
         project_count: data.client.project_count || 0
       };
       
-      // Update local state
-      const updatedClients = [...clients, newClient];
-      setClients(updatedClients);
-      
-      // Update cache with the new client list
-      setCache('cache_admin_clients', updatedClients);
+      // Mise à jour optimiste
+      addItem(newClient);
       
       setToast({ message: data.message || "Client added successfully", type: 'success' });     
       setShowForm(false);
@@ -77,46 +109,9 @@ export default function DashboardAdmin() {
     }
   };
 
-  const fetchClients = async (bypassCache = false) => {
-    try {
-      setIsLoading(true);
-      
-      // Try to get from cache first, unless bypassing cache
-      if (!bypassCache) {
-        const cachedClients = getCache<Client[]>('cache_admin_clients');
-        if (cachedClients) {
-          setClients(cachedClients);
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      const response = await fetch('/api/admin/fetch/dashboard');
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-      const result = await response.json();
-      setClients(result);
-      
-      // Store in cache
-      setCache('cache_admin_clients', result);
-    } catch (err) {
-      console.error('Error fetching clients:', err);
-      setToast({ 
-        message: err instanceof Error ? err.message : 'Failed to fetch client data', 
-        type: 'error' 
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Configurer Fuse.js pour la recherche
   useEffect(() => {
-    fetchClients();
-  }, []);
-
-  useEffect(() => {
-    if (clients.length > 0) {
+    if (clients && clients.length > 0) {
       const options = {
         keys: ['name', 'email', 'phone', 'project_count', 'creation_date'],
         threshold: 0.3,
@@ -136,17 +131,20 @@ export default function DashboardAdmin() {
     }
   }, [toast]);
 
+  const clientsList = clients || [];
   const filteredClients = searchTerm && fuse
     ? fuse.search(searchTerm).map(result => result.item)
-    : clients;
+    : clientsList;
 
   const sortedClients = [...filteredClients].sort((a, b) => {
     const compare = new Date(a.creation_date).getTime() - new Date(b.creation_date).getTime();
     return sortOrder === 'asc' ? compare : -compare;
-  });  const handleDelete = async (id: string): Promise<void> => {
+  });
+
+  const handleDelete = async (id: string): Promise<void> => {
     try {
       // Find the client to get their email
-      const clientToDelete = clients.find(client => client.id === id);
+      const clientToDelete = clientsList.find(client => client.id === id);
       if (!clientToDelete) {
         throw new Error('Client not found');
       }
@@ -164,15 +162,8 @@ export default function DashboardAdmin() {
         throw new Error(errorData.error || `Error: ${response.status}`);
       }
 
-      // Update local state
-      const updatedClients = clients.filter(client => client.id !== id);
-      setClients(updatedClients);
-      
-      // Update cache with the new client list
-      setCache('cache_admin_clients', updatedClients);
-      
-      // Also clear any related client caches
-      localStorage.removeItem(`cache_client_${id}`);
+      // Mise à jour optimiste
+      removeItem(id);
       
       setToast({ message: 'Client deleted successfully', type: 'success' });
     } catch (err) {
@@ -212,7 +203,7 @@ export default function DashboardAdmin() {
             </div>
             <div className="mt-4 md:mt-0 flex gap-2">
               <button 
-                onClick={() => fetchClients(true)} 
+                onClick={() => revalidate()} 
                 className="btn-outline px-4 py-2 flex items-center gap-2"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

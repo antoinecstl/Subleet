@@ -4,17 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Toast from '@/app/components/Toast';
 import { useSubscription } from '@/lib/subscription-context';
+import ProjectCreationWizard from '@/app/components/ProjectCreationWizard';
 
 export default function CreateProject() {
   const router = useRouter();
   const { hasClassicPlan, isLoading: isCheckingPlan } = useSubscription();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  const [projectData, setProjectData] = useState({
-    name: '',
-    url: '',
-  });
 
   // Check if user already has projects and if they have Classic plan
   useEffect(() => {
@@ -34,7 +30,7 @@ export default function CreateProject() {
             if (data.projects && data.projects.length > 0) {
               // User already has projects, redirect to dashboard
               setToast({
-                message: 'You already have a project. Classic plan allows only one project.',
+                message: 'You already have a project. The Classic plan allows only one project.',
                 type: 'error',
               });
               setTimeout(() => router.push('/dashboard'), 2000);
@@ -49,7 +45,7 @@ export default function CreateProject() {
 
     checkUserProjectsAndPlan();
   }, [hasClassicPlan, isCheckingPlan, router]);
-  
+
   useEffect(() => {
     if (toast) {
       setToastVisible(true);
@@ -60,83 +56,7 @@ export default function CreateProject() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setProjectData(prev => ({ ...prev, [name]: value }));
-  };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      const response = await fetch('/api/public/projects/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(projectData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 403 && data.needsSubscription) {
-          // L'utilisateur a besoin d'un abonnement
-          router.push('/pricing');
-          return;
-        }
-        
-        if (response.status === 403 && data.maxProjectsReached) {
-          // L'utilisateur a atteint le nombre maximum de projets
-          setToast({
-            message: 'You have already reached the maximum allowed projects',
-            type: 'error',
-          });
-          setTimeout(() => router.push('/dashboard'), 3000);
-          return;
-        }
-        
-        throw new Error(data.error || 'Project creation failed');
-      }
-      setToast({
-        message: 'Project created successfully! All resources have been configured automatically.',
-        type: 'success',
-      });
-
-    // Show creation details in console for the developer
-    if (data.vector_store_id) {
-        console.log('Vector store created:', data.vector_store_id);
-    }
-    if (data.assistant_id) {
-        console.log('AI assistant created:', data.assistant_id);
-    }
-    if (data.edge_function) {
-        console.log('Edge Function deployed:', data.edge_function);
-    }
-    if (data.api_key) {
-        console.log('API key generated for the project');
-    }
-
-      // Redirection vers la page du projet nouvellement créé
-      setTimeout(() => {
-        if (data.project && data.project.project_id) {
-          router.push(`/dashboard/project/${data.project.project_id}`);
-        } else {
-          router.push('/dashboard');
-        }
-      }, 3000); // Temps plus long pour laisser l'utilisateur voir le message de succès
-      
-    } catch (error) {
-      console.error('Error creating project:', error);
-      setToast({
-        message: error instanceof Error ? error.message : 'An error occurred while creating the project',
-        type: 'error',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
   if (isCheckingPlan) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -150,97 +70,62 @@ export default function CreateProject() {
       {/* Decorative elements */}
       <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
       <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
-      
-      <div className="relative z-10 content-container max-w-3xl mx-auto">
+
+      <div className="relative z-10 max-w-4xl mx-auto">
         <div className="mb-8">
-            <button 
-                onClick={() => router.back()} 
-                className="flex items-center text-primary hover:underline mb-4"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clipRule="evenodd" />
-                </svg>
-                Back
-            </button>
-            <h1 className="text-3xl font-bold mb-2">Create a New Project</h1>
-            <p className="text-lg text-muted">
-                Set up the basic details of your new AI project.
-            </p>
-        </div>
-          <div className="glass-card rounded-xl p-6">
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label htmlFor="name" className="block mb-2 font-medium">
-                Project name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={projectData.name}
-                onChange={handleChange}
-                className="w-full p-2 border border-gray-300 rounded-md bg-transparent"
-                placeholder="My Subleet AI Assistant"
-                required
+          <button
+            onClick={() => router.back()}
+            className="flex items-center text-primary hover:underline mb-4"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
+                clipRule="evenodd"
               />
-            </div>
-            
-            <div className="mb-4">
-                <label htmlFor="url" className="block mb-2 font-medium">
-                    Website URL <span className="text-red-500">*</span>
-                </label>
-                <input
-                    type="text"
-                    id="url"
-                    name="url"
-                    value={projectData.url}
-                    onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded-md bg-transparent"
-                    placeholder="https://example.com"
-                    required
-                />
-                <p className="text-sm text-muted mt-1">
-                    The URL where the AI assistant will be integrated. For development environment, use <code>*</code>
-                </p>
-            </div>
-            
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="btn-gradient px-6 py-2"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                <span className="flex items-center">
-                    <svg
-                        className="animate-spin -ml-1 mr-2 h-4 w-4"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                    >
-                        <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                        ></circle>
-                        <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                    </svg>
-                    Creating project...
-                </span>
-                ) : 'Create Project'}
-              </button>
-            </div>
-          </form>
+            </svg>
+            Back
+          </button>
+
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Create a New Project
+            </h1>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Create your project and get your secure API key. This key will only be displayed once for security.
+            </p>
+          </div>
+        </div>
+
+        <ProjectCreationWizard />
+
+        <div className="mt-12 text-center">
+          <div className="glass-card rounded-xl p-6 max-w-2xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Important Information
+            </h3>
+            <ul className="text-left text-gray-700 space-y-3">
+              <li className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                <span>Your API key will be automatically generated after project creation.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                <span>It will only be displayed once for security reasons.</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                <span>Make sure to copy and store it in a safe place, if you lose it, contact support to get a new key..</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-2 h-2 bg-purple-600 rounded-full mt-2"></div>
+                <span>During development, you can use "*" as a URL wildcard; remember to replace it with your real production URL before going live.</span>
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
-      
+
       {toast && (
         <Toast
           message={toast.message}

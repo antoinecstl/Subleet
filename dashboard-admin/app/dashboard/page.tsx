@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from "@clerk/nextjs";
-import { getCache, setCache } from '@/lib/cache-utils';
+import { useCache } from '@/hooks/useCache';
 import Toast from '../components/Toast';
 import { useSubscription } from '@/lib/subscription-context';
 
@@ -20,19 +20,51 @@ export default function Dashboard() {
   const router = useRouter();
   const { user } = useUser();
   const { hasClassicPlan } = useSubscription();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
-  useEffect(() => {
-    // Only fetch user dashboard data if user has Classic plan
-    if (hasClassicPlan) {
-      fetchUserData();
-    } else {
-      // Set loading to false for users without Classic plan
-      setLoading(false);
+
+  // Fonction pour récupérer les données du dashboard
+  const fetchUserDashboard = async (): Promise<Project[]> => {
+    const response = await fetch('/api/public/fetch/dashboard');
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
     }
-  }, [hasClassicPlan]);
+
+    const data = await response.json();
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return data.projects || [];
+  };
+
+  // Utiliser le cache pour les projets seulement si l'utilisateur a le plan Classic
+  const {
+    data: projects,
+    isLoading: loading,
+    error,
+    revalidate,
+    mutate: mutateProjects
+  } = useCache<Project[]>(
+    'user_dashboard',
+    fetchUserDashboard,
+    {
+      userId: user?.id,
+      duration: 5 * 60 * 1000, // 5 minutes
+      revalidateOnFocus: true,
+      enabled: hasClassicPlan && !!user // Seulement si l'utilisateur a le plan et est connecté
+    }
+  );
+
+  // Gérer les erreurs
+  useEffect(() => {
+    if (error) {
+      setToast({
+        message: error.message || 'Failed to fetch dashboard data',
+        type: 'error'
+      });
+    }
+  }, [error]);
 
   useEffect(() => {
     if (toast) {
@@ -44,52 +76,28 @@ export default function Dashboard() {
       return () => clearTimeout(timer);
     }
   }, [toast]);
-  
-  const fetchUserData = async (bypassCache = false) => {
+
+  // Handler pour le bouton refresh
+  const handleRefresh = async () => {
     try {
-      setLoading(true);
-        // Try to get from cache first unless bypassing
-      if (!bypassCache) {
-        const cachedData = getCache<Project[]>('cache_user_dashboard');
-        if (cachedData) {
-          setProjects(cachedData);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // If no cache or bypassing, fetch from API
-      const response = await fetch('/api/public/fetch/dashboard');
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Update state with fetched projects
-      setProjects(data.projects || []);
-      
-      // Cache the result
-      setCache('cache_user_dashboard', data.projects || []);
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      await revalidate();
       setToast({
-        message: error instanceof Error ? error.message : 'Failed to fetch dashboard data',
+        message: 'Dashboard data refreshed successfully',
+        type: 'success'
+      });
+    } catch (error) {
+      setToast({
+        message: 'Failed to refresh dashboard data',
         type: 'error'
       });
-      setProjects([]);
-    } finally {
-      setLoading(false);
     }
   };
 
   // Handler for create project button
   const handleCreateProject = () => {
+    const projectsList = projects || [];
     if (hasClassicPlan) {
-      if (projects.length >= 1) {
+      if (projectsList.length >= 1) {
         // User already has the maximum number of projects allowed
         setToast({
           message: 'You have reached the maximum number of projects allowed with your current plan',
@@ -114,6 +122,8 @@ export default function Dashboard() {
     );
   }
 
+  const projectsList = projects || [];
+
   return (
     <div className="min-h-screen p-6 relative overflow-hidden">
       {/* Decorative elements */}
@@ -131,7 +141,7 @@ export default function Dashboard() {
             </div>            <div className="mt-4 md:mt-0">
               {hasClassicPlan && (
                 <button 
-                  onClick={() => fetchUserData(true)} 
+                  onClick={handleRefresh} 
                   className="btn-outline px-4 py-2 flex items-center gap-2"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -152,7 +162,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
 
             {/* No projects message */}
-            {!hasClassicPlan && projects.length === 0 && (
+            {!hasClassicPlan && projectsList.length === 0 && (
               <Link href="/pricing">
               <div className="p-4 h-full glass-card rounded-xl flex flex-col items-center justify-center">
                 <div className="text-center">
@@ -168,12 +178,12 @@ export default function Dashboard() {
             {/* Create Project Card Button */}
             <div
               className={`glass-card rounded-xl p-6 h-full flex flex-col justify-center items-center cursor-pointer hover-scale border-2 border-dashed border-primary/40 hover:border-primary transition-colors ${
-                hasClassicPlan && projects.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''
+                hasClassicPlan && projectsList.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               onClick={handleCreateProject}
               tabIndex={0}
               role="button"
-              aria-disabled={hasClassicPlan && projects.length >= 1}
+              aria-disabled={hasClassicPlan && projectsList.length >= 1}
             >
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -187,7 +197,7 @@ export default function Dashboard() {
             </div>
 
             {/* Existing Project Cards */}
-            {projects.map((project) => (
+            {projectsList.map((project) => (
               <Link href={`/dashboard/project/${project.project_id}`} key={project.project_id} className="hover:no-underline">
                 <div className="glass-card rounded-xl p-6 h-full flex flex-col hover-scale">
                   <div className="flex justify-between items-start mb-4">
@@ -216,7 +226,7 @@ export default function Dashboard() {
               <footer>
                 <p>
                   Your current plan allows a maximum of 1 project.
-                  {projects.length >= 1 ? (
+                  {projectsList.length >= 1 ? (
                     <>
                     <br />
                     You have reached your project limit.
@@ -224,7 +234,7 @@ export default function Dashboard() {
                   ) : (
                     <>
                     <br />
-                    You have created {projects.length} project{projects.length !== 1 && 's'}.
+                    You have created {projectsList.length} project{projectsList.length !== 1 && 's'}.
                     </>
                   )}
                 </p>

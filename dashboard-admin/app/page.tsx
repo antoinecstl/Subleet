@@ -3,14 +3,22 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from "@clerk/nextjs";
-import { clearCache } from '@/lib/cache-utils';
+import { clearUserCache, setCurrentUser } from '@/lib/cache-utils';
 
 export default function Home() {
   const { user, isLoaded } = useUser();
 
-  // Clear cache on logout
+  // Gérer la connexion/déconnexion
   useEffect(() => {
-    if (isLoaded && !user) clearCache();
+    if (isLoaded) {
+      if (user) {
+        // Utilisateur connecté, associer le cache à cet utilisateur
+        setCurrentUser(user.id);
+      } else {
+        // Utilisateur déconnecté, vider le cache
+        clearUserCache();
+      }
+    }
   }, [user, isLoaded]);
 
   return (

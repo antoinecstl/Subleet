@@ -150,7 +150,8 @@ export async function POST(request: NextRequest) {
             .insert([{
                 project_id: createdProject.project_id,
                 encrypted_key: encryptedApiKey,
-                created_at: new Date().toISOString()
+                created_at: new Date().toISOString(),
+                is_displayed: false // Initialize as not displayed
             }]);
         
         if (apiKeyError) {
