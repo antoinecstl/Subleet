@@ -21,10 +21,10 @@ export async function GET() {
       return NextResponse.json({ error: 'User email not found' }, { status: 400 });
     }    const primaryEmail = user.emailAddresses[0].emailAddress;
 
-    // Find client by email
+    // Find client by email - on ne récupère que l'id nécessaire pour la relation
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
-      .select('*')
+      .select('id')
       .eq('email', primaryEmail)
       .single();
 
@@ -33,10 +33,10 @@ export async function GET() {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
     
-    // Find projects associated with this client using project_owner
+    // Find projects associated with this client - récupération seulement des champs utilisés dans le dashboard
     const { data: projectsData, error: projectsError } = await supabase
       .from('projects')
-      .select('*')
+      .select('project_id, project_name, working, creation_timestamp')
       .eq('project_owner', clientData.id)
       .order('project_name', { ascending: true });
 
@@ -44,7 +44,7 @@ export async function GET() {
       console.error('Projects error:', projectsError);
       return NextResponse.json({ error: 'Error fetching projects' }, { status: 500 });
     }    return NextResponse.json({
-      client: clientData,
+      client: { id: clientData.id }, // On ne retourne que l'id du client (suffisant pour les besoins)
       projects: projectsData,
       hasClassicPlan: true // Garanti par le middleware - tous les utilisateurs ici ont le plan Classic
     });

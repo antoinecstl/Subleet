@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { format } from 'date-fns';
 import { useParams, useRouter } from 'next/navigation';
 import Toast from '../../../components/Toast';
-import { getCache, setCache } from '@/lib/cache-utils';
-import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
+import AdminApiKeyRegenerate from '../../../components/AdminApiKeyRegenerate';
+import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 interface VectorFile {
   id: string;
@@ -37,15 +38,6 @@ interface AssistantInfo {
   name?: string;
 }
 
-interface ProjectData {
-  project: Project;
-  clientInfo: ClientInfo;
-  assistant: AssistantInfo | null;
-  vectorStoreId: string | null;
-  assistantId: string | null;
-  apiKey: string | null;
-}
-
 export default function AdminProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
@@ -68,9 +60,19 @@ export default function AdminProjectDetail() {
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // States for identifiers
+  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
   const [assistantId, setAssistantId] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState<string | null>(null);  const [copySuccess, setCopySuccess] = useState(false);
+  const [apiKey, setApiKey] = useState<string | null>(null);
+  
+  // States for edge function URL
+  const [edgeFunctionUrl, setEdgeFunctionUrl] = useState<string | null>(null);
+  const [urlVisible, setUrlVisible] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+  
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const fetchVectorFiles = useCallback(async () => {
     try {
@@ -90,23 +92,9 @@ export default function AdminProjectDetail() {
   }, [id]);
 
   useEffect(() => {
-    const fetchProjectData = async (bypassCache = false) => {
+    const fetchProjectData = async () => {
       try {
         setLoading(true);
-        if (!bypassCache) {
-          const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
-          if (cachedData) {
-            setProject(cachedData.project);
-            setClientInfo(cachedData.clientInfo);
-            setAssistantInfo(cachedData.assistant);
-            setEditedInstructions(cachedData.assistant?.instructions || '');
-            setVectorStoreId(cachedData.vectorStoreId || null);
-            setAssistantId(cachedData.assistantId || null);
-            setApiKey(cachedData.apiKey || null);
-            setLoading(false);
-            return;
-          }
-        }
         
         const res = await fetch(`/api/admin/fetch/project?project_id=${id}`);
         const data = await res.json();
@@ -122,15 +110,11 @@ export default function AdminProjectDetail() {
           setAssistantId(data.assistantId || null);
           setApiKey(data.apiKey || null);
           
-          // Cache the result
-          setCache(`cache_admin_project_${id}`, {
-            project: data.project,
-            clientInfo: data.clientInfo,
-            assistant: data.assistant,
-            vectorStoreId: data.vectorStoreId,
-            assistantId: data.assistantId,
-            apiKey: data.apiKey
-          });
+          // Construire l'URL de la fonction edge
+          if (data.edgeFunctionSlug) {
+            const url = `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}${data.edgeFunctionSlug}`;
+            setEdgeFunctionUrl(url);
+          }
         }
       } catch (error) {
         console.error('Error fetching project data:', error);
@@ -183,15 +167,6 @@ export default function AdminProjectDetail() {
       setProject({ ...project, working: !project.working });
       setToast({ message: 'Project status updated successfully', type: 'success' });
       
-      // After successful toggle, update cache
-      setCache(`cache_admin_project_${id}`, {
-        project: { ...project, working: !project.working },
-        clientInfo,
-        assistant: assistantInfo,
-        vectorStoreId,
-        assistantId,
-        apiKey
-      });
       // Also invalidate the client cache since project status changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       
@@ -239,19 +214,6 @@ export default function AdminProjectDetail() {
       setToast({ message: 'Assistant instructions updated successfully', type: 'success' });
       setIsEditingInstructions(false);
       
-      // Update cache
-      const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
-      if (cachedData && cachedData.assistant) {
-        setCache(`cache_admin_project_${id}`, {
-          ...cachedData,
-          assistant: {
-            ...cachedData.assistant,
-            instructions: data.assistant.instructions
-          },
-          apiKey: cachedData.apiKey || apiKey
-        });
-      }
-      
       // Also invalidate the client cache since instructions changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       localStorage.removeItem(`cache_project_${id}`);
@@ -290,19 +252,6 @@ export default function AdminProjectDetail() {
       setToast({ message: 'Assistant model updated successfully', type: 'success' });
       setIsModelChangeOpen(false);
       
-      // Update cache
-      const cachedData = getCache<ProjectData>(`cache_admin_project_${id}`);
-      if (cachedData && cachedData.assistant) {
-        setCache(`cache_admin_project_${id}`, {
-          ...cachedData,
-          assistant: {
-            ...cachedData.assistant,
-            model: data.assistant.model
-          },
-          apiKey: cachedData.apiKey || apiKey
-        });
-      }
-      
       // Also invalidate the client cache since model changed
       localStorage.removeItem(`cache_client_${project.project_owner}`);
       localStorage.removeItem(`cache_project_${id}`);
@@ -311,6 +260,23 @@ export default function AdminProjectDetail() {
       setToast({ message: err instanceof Error ? err.message : 'Failed to update model', type: 'error' });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleToggleUrl = () => {
+    setUrlVisible(!urlVisible);
+  };
+
+  const handleCopyUrl = async () => {
+    if (edgeFunctionUrl) {
+      try {
+        await navigator.clipboard.writeText(edgeFunctionUrl);
+        setUrlCopied(true);
+        setToast({ message: 'URL copied to clipboard!', type: 'success' });
+        setTimeout(() => setUrlCopied(false), 2000);
+      } catch {
+        setToast({ message: 'Failed to copy URL', type: 'error' });
+      }
     }
   };
 
@@ -391,17 +357,19 @@ export default function AdminProjectDetail() {
       console.error('Failed to copy text: ', err);
     }
   };
-  // Add a function to copy API key to clipboard
-  const copyApiKey = async () => {
-    if (apiKey) {
-      try {
-        await navigator.clipboard.writeText(apiKey);
-        setCopySuccess(true);
-        setTimeout(() => setCopySuccess(false), 2000);
-      } catch (err) {
-        console.error('Failed to copy: ', err);
-      }
-    }
+
+  // Fonction de callback après régénération de clé API
+  const handleApiKeyRegenerated = () => {
+    setToast({ message: 'API key regenerated successfully!', type: 'success' });
+    
+    // Invalider le cache pour forcer le rechargement des données
+    localStorage.removeItem(`cache_client_${project?.project_owner}`);
+    localStorage.removeItem(`cache_project_${id}`);
+    
+    // Recharger les données du projet
+    setTimeout(() => {
+      window.location.reload();
+    }, 1500);
   };
 
   if (loading) {
@@ -414,47 +382,47 @@ export default function AdminProjectDetail() {
   
   if (!project) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-3 sm:p-6">
         <button 
           onClick={() => router.back()} 
-          className="btn-gradient px-6 py-2 mb-6"
+          className="btn-gradient px-4 py-2 sm:px-6 sm:py-2 mb-4 sm:mb-6 text-sm sm:text-base"
         >
           &larr; Back
         </button>
-        <div className="alert alert-error">Project not found</div>
+        <div className="alert alert-error text-sm sm:text-base">Project not found.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 relative overflow-hidden">
+    <div className="min-h-screen p-3 sm:p-6 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
+      <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-32 h-32 sm:w-64 sm:h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-10 sm:bottom-20 right-5 sm:right-10 w-40 h-40 sm:w-80 sm:h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
       
       <div className="relative z-10 content-container">
         <button 
           onClick={() => router.push(`/dashboard-admin/client/${project.project_owner}`)} 
-          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+          className="mb-4 sm:mb-6 px-4 py-2 sm:px-6 sm:py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1 text-sm sm:text-base"
         >
           &larr; <span>Back to Client</span>
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold mb-0">{project.project_name}</h1>
-            <div className="flex items-center gap-3">
-              <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
-                State : {project.working ? 'Active' : 'Inactive'}
+        <div className="mb-4 sm:mb-8 p-3 sm:p-8 glass-card rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold card-header m-0 break-words">{project.project_name}</h1>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'} self-start sm:self-auto`}>
+                {project.working ? 'Active' : 'Inactive'}
               </div>
               <button 
                 onClick={toggleProjectStatus}
                 disabled={isUpdating}
-                className={`${project.working ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)]'} px-4 py-2 rounded-full text-white flex items-center gap-2 transition duration-300`}
+                className={`${project.working ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)]'} px-3 py-2 sm:px-4 sm:py-2 rounded-full text-white flex items-center gap-2 transition duration-300 w-full sm:w-auto justify-center text-sm sm:text-base`}
               >
                 {isUpdating ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
+                  <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></div>
                 ) : null}
                 {project.working ? 'Deactivate' : 'Activate'}
               </button>
@@ -462,24 +430,24 @@ export default function AdminProjectDetail() {
           </div>
           
           {clientInfo && (
-            <div className="p-6 glass-card rounded-xl mb-6">
-              <h3 className="card-header">Client Information</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
+              <h3 className="card-header text-lg sm:text-xl">Client Information</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-3">
                   <div>
                     <span className="text-sm font-semibold text-muted block mb-1">Client Name</span>
-                    <span>{clientInfo.name}</span>
+                    <span className="break-words text-sm sm:text-base">{clientInfo.name}</span>
                   </div>
                   <div>
                     <span className="text-sm font-semibold text-muted block mb-1">Client Email</span>
-                    <span>{clientInfo.email}</span>
+                    <span className="break-all text-sm sm:text-base">{clientInfo.email}</span>
                   </div>
                 </div>
                 <div className="space-y-3">
                   {clientInfo.phone && (
                     <div>
                       <span className="text-sm font-semibold text-muted block mb-1">Phone</span>
-                      <span>{clientInfo.phone}</span>
+                      <span className="break-words text-sm sm:text-base">{clientInfo.phone}</span>
                     </div>
                   )}
                 </div>
@@ -488,17 +456,17 @@ export default function AdminProjectDetail() {
           )}
           
           {/* Project details section */}
-          <div className="p-6 glass-card rounded-xl mb-6">
-            <h3 className="card-header">Project Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
+            <h3 className="card-header text-lg sm:text-xl">Project Details</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3">
                 <div>
                   <span className="text-sm font-semibold text-muted block mb-1">Project ID</span>                  
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-mono bg-card-bg px-2 py-1 rounded">{project.project_id}</span>
+                    <span className="text-xs sm:text-sm font-mono bg-card-bg px-2 py-1 rounded break-all">{project.project_id}</span>
                     <button 
                       onClick={() => copyToClipboard(project.project_id.toString())}
-                      className={`p-1.5 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                      className={`p-1.5 rounded-full hover:bg-card-hover-border transition-colors flex-shrink-0 ${copySuccess ? 'text-success' : 'text-muted'}`}
                     >
                       <FaCopy size={14} />
                     </button>
@@ -507,7 +475,7 @@ export default function AdminProjectDetail() {
                 {project.creation_timestamp && (
                   <div>
                     <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
-                    <span>{new Date(project.creation_timestamp).toLocaleDateString()}</span>
+                    <span className="text-sm sm:text-base">{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
                   </div>
                 )}
                 <div>
@@ -517,73 +485,77 @@ export default function AdminProjectDetail() {
                       href={project.project_url} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="text-primary underline hover:text-primary-light break-all transition-colors"
+                      className="text-primary underline hover:text-primary-light break-all transition-colors text-sm sm:text-base"
                     >
                       {project.project_url}
                     </a>
                   ) : (
-                    <span className="text-muted">No URL provided</span>
+                    <span className="text-muted text-sm sm:text-base">No URL provided</span>
                   )}
                 </div>
               </div>
               <div className="space-y-3">
-                {assistantInfo?.model && (
-                  <div>
-                    <span className="text-sm font-semibold text-muted block mb-1">AI Model</span>
-                    <div className="flex items-center gap-3">
-                      <span>{assistantInfo.model}</span>
-                      <button 
-                        onClick={() => setIsModelChangeOpen(true)}
-                        className="text-xs px-2 py-1 btn-outline rounded-full"
-                      >
-                        Change
-                      </button>
-                    </div>
-                  </div>
-                )}
                 <div>
                   <span className="text-sm font-semibold text-muted block mb-1">Status</span>
                   <span className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
                     {project.working ? 'Active' : 'Inactive'}
                   </span>
                 </div>
+                {assistantInfo?.model && (
+                  <div>
+                    <span className="text-sm font-semibold text-muted block mb-1">AI Model</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                      <span className="break-words text-sm sm:text-base">{assistantInfo.model}</span>
+                      <button 
+                        onClick={() => setIsModelChangeOpen(true)}
+                        className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1 btn-outline rounded-full self-start sm:self-auto"
+                      >
+                        Change
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
           
           {/* Instructions section */}
-          <div className="p-6 glass-card rounded-xl mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="card-header mb-0">
+          <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+              <h3 className="card-header mb-0 text-lg sm:text-xl">
                 Assistant Instructions
               </h3>
               {!isEditingInstructions ? (
                 <button 
                   onClick={startEditingInstructions}
-                  className="btn-outline px-4 py-2"
+                  className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base self-start sm:self-auto"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                   </svg>
                   Edit
                 </button>
               ) : (
-                <div className="space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <button 
                     onClick={saveInstructionsChanges}
                     disabled={isUpdating}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-4 py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center"
+                    className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base flex items-center justify-center"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {isUpdating ? 'Saving...' : 'Save'}
+                    {isUpdating ? (
+                      <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1 sm:mr-2"></div>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    Save
                   </button>
                   <button 
                     onClick={cancelEditingInstructions}
-                    className="btn-ghost px-4 py-2 border border-card-border"
+                    className="btn-ghost px-3 py-2 sm:px-4 sm:py-2 border border-card-border text-sm sm:text-base"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                     Cancel
@@ -597,112 +569,158 @@ export default function AdminProjectDetail() {
                 <textarea 
                   value={editedInstructions}
                   onChange={(e) => setEditedInstructions(e.target.value)}
-                  className="input-field min-h-[250px] resize-vertical"
+                  className="input-field min-h-[200px] sm:min-h-[250px] resize-vertical"
                   placeholder="Enter instructions for the AI assistant..."
                 />
-                <p className="text-xs text-muted italic">
-                  These instructions guide the AI in its interactions with users. Be precise and detailed for better results.
-                </p>
               </div>
             ) : (
               <div>
-                <div className="p-5 rounded-xl bg-card-bg border border-card-border min-h-[200px] max-h-[400px] overflow-auto">
-                  <p className="text-sm whitespace-pre-wrap leading-relaxed">{assistantInfo?.instructions || 'No instructions provided for this assistant.'}</p>
+                <div className="p-3 sm:p-5 rounded-xl bg-card-bg border border-card-border min-h-[150px] sm:min-h-[200px] max-h-[300px] sm:max-h-[400px] overflow-auto">
+                  <p className="text-sm whitespace-pre-wrap leading-relaxed break-words">{assistantInfo?.instructions || 'No instructions provided for this assistant.'}</p>
                 </div>
-                <p className="text-xs text-muted mt-3 italic">
-                  These instructions guide the AI in its interactions with users.
-                </p>
               </div>
             )}
           </div>
           
           {/* Important IDs section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
             {/* Vector Store ID */}
             {vectorStoreId && (
-              <div className="p-6 glass-card rounded-xl h-full">
-                <h3 className="card-header">
+              <div className="p-3 sm:p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header text-lg sm:text-xl">
                   Vector Store ID
                 </h3>
-                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
-                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                <div className="flex items-center gap-2 bg-card-bg px-3 sm:px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-xs sm:text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow font-mono">
                     {vectorStoreId}
                   </code>
                   <button 
-                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    className={`p-1.5 sm:p-2 rounded-full hover:bg-card-hover-border transition-colors flex-shrink-0 ${copySuccess ? 'text-success' : 'text-muted'}`}
                     onClick={() => copyToClipboard(vectorStoreId)}
                     title="Copy ID"
                   >
-                    <FaCopy size={16} />
+                    <FaCopy size={14} />
                   </button>
                 </div>
-                <p className="text-xs text-muted mt-3">
-                  This identifier is needed to integrate RAG functionality into your chatbot.
-                </p>
               </div>
             )}
             
             {/* Assistant ID */}
             {assistantId && (
-              <div className="p-6 glass-card rounded-xl h-full">
-                <h3 className="card-header">
+              <div className="p-3 sm:p-6 glass-card rounded-xl h-full">
+                <h3 className="card-header text-lg sm:text-xl">
                   Assistant ID
                 </h3>
-                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
-                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
+                <div className="flex items-center gap-2 bg-card-bg px-3 sm:px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                  <code className="text-xs sm:text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow font-mono">
                     {assistantId}
                   </code>
                   <button 
-                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                    className={`p-1.5 sm:p-2 rounded-full hover:bg-card-hover-border transition-colors flex-shrink-0 ${copySuccess ? 'text-success' : 'text-muted'}`}
                     onClick={() => copyToClipboard(assistantId)}
                     title="Copy ID"
                   >
-                    <FaCopy size={16} />
+                    <FaCopy size={14} />
                   </button>
                 </div>
-                <p className="text-xs text-muted mt-3">
-                  Use this identifier to connect your application to the AI chat service.
-                </p>
               </div>
             )}
           </div>
 
-          {/* API Key Section */}
-          {apiKey && (
-            <div className="p-6 glass-card rounded-xl mb-6">
-              <h3 className="card-header">
-                API Key
-              </h3>
-              <div className="mt-4">
-                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
-                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow font-mono">
-                    {apiKey}
-                  </code>
-                  <button 
-                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
-                    onClick={() => copyApiKey()}
-                    title="Copy API Key"
-                  >
-                    <FaCopy size={16} />
-                  </button>
+          {/* Credentials Section */}
+          <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
+            <h3 className="card-header text-lg sm:text-xl mb-4 sm:mb-6">
+              Credentials
+            </h3>
+            
+            <div className="space-y-4 sm:space-y-6">
+              {/* Edge Function URL */}
+              <div>
+                <label className="text-sm font-semibold text-muted block mb-2">
+                  Edge Function URL
+                </label>
+                <div className="p-3 rounded-lg bg-card-bg border border-card-border">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 font-mono text-xs sm:text-sm break-all min-w-0">
+                      {edgeFunctionUrl ? (
+                        urlVisible ? (
+                          edgeFunctionUrl
+                        ) : (
+                          <div className="overflow-hidden">
+                            <span className="block truncate">••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••</span>
+                          </div>
+                        )
+                      ) : (
+                        'N/A'
+                      )}
+                    </div>
+                    {edgeFunctionUrl && (
+                      <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                        <button
+                          onClick={handleToggleUrl}
+                          className="p-1.5 sm:p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition duration-200"
+                          title={urlVisible ? "Hide URL" : "Show URL"}
+                        >
+                          {urlVisible ? <FaEyeSlash className="text-xs sm:text-sm" /> : <FaEye className="text-xs sm:text-sm" />}
+                        </button>
+                        {urlVisible && (
+                          <button
+                            onClick={handleCopyUrl}
+                            className={`p-1.5 sm:p-2 rounded-lg transition duration-200 ${
+                              urlCopied 
+                                ? 'bg-green-500/10 text-green-500' 
+                                : 'bg-primary/10 hover:bg-primary/20 text-primary'
+                            }`}
+                            title={urlCopied ? 'Copied!' : 'Copy URL'}
+                          >
+                            <FaCopy className="text-xs sm:text-sm" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <p className="text-xs text-muted mt-3">
-                  This API key is required for the chatbox to authenticate with Edge Functions. It is encrypted in storage and only displayed here.
-                </p>
               </div>
+              
+              {/* API Key */}
+              {apiKey && (
+                <div>
+                  <label className="text-sm font-semibold text-muted block mb-2">
+                    API Key
+                  </label>
+                  <div className="flex items-center gap-2 bg-card-bg px-3 sm:px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
+                    <code className="text-xs sm:text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow font-mono">
+                      {apiKey}
+                    </code>
+                    <button 
+                      className={`p-1.5 sm:p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
+                      onClick={() => copyToClipboard(apiKey)}
+                      title="Copy API Key"
+                    >
+                      <FaCopy size={14} />
+                    </button>
+                  </div>
+                  <div className="mt-4">
+                    <AdminApiKeyRegenerate 
+                      projectId={id as string}
+                      onKeyRegenerated={handleApiKeyRegenerated}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
         
         {/* Vector Store Files Section */}
-        <div className="p-8 glass-card rounded-xl mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="card-header text-xl mb-0">
+        <div className="p-3 sm:p-8 glass-card rounded-xl mb-4 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <h2 className="card-header text-lg sm:text-xl mb-0">
               Reference Documents
             </h2>
             <button 
               onClick={fetchVectorFiles}
-              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300"
+              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300 self-start sm:self-auto"
               disabled={loadingFiles}
               title="Refresh list"
             >
@@ -710,15 +728,15 @@ export default function AdminProjectDetail() {
             </button>
           </div>
 
-          <div className="mb-6 p-5 rounded-xl bg-card-bg border border-card-border">
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
-              <div className="flex-grow w-full">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-5 rounded-xl bg-card-bg border border-card-border">
+            <div className="flex flex-col gap-3 sm:gap-4 mb-3">
+              <div className="w-full">
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  className="w-full text-sm file:mr-4 file:py-2 file:px-4
+                  className="w-full text-xs sm:text-sm file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4
                     file:rounded-full file:border-0
-                    file:text-sm file:font-semibold file:cursor-pointer
+                    file:text-xs sm:file:text-sm file:font-semibold file:cursor-pointer
                     file:bg-gradient-to-r file:from-primary file:to-secondary file:text-white
                     hover:file:from-[var(--button-hover-from)] hover:file:to-[var(--button-hover-to)]
                     cursor-pointer"
@@ -729,14 +747,13 @@ export default function AdminProjectDetail() {
               <button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || isUploading}
-                className="btn-gradient px-5 py-2 flex items-center gap-2 w-full sm:w-auto justify-center"
+                className="btn-gradient px-3 py-2 sm:px-5 sm:py-2 flex items-center gap-2 justify-center text-sm sm:text-base"
               >
                 <FaUpload />
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
             <p className="text-xs text-muted">Supported formats: .txt, .md, .pdf, .csv, .json, .html</p>
-            <p className="text-xs text-muted mt-1">These documents feed your AI assistant&apos;s knowledge base.</p>
           </div>
 
           {loadingFiles ? (
@@ -745,47 +762,79 @@ export default function AdminProjectDetail() {
             </div>
           ) : vectorFiles.length > 0 ? (
             <div className="overflow-hidden rounded-xl bg-card-bg border border-card-border">
-              <table className="table-modern min-w-full">
-                <thead>
-                  <tr>
-                    <th>File Name</th>
-                    <th className="text-center">Size</th>
-                    <th className="text-center">Date</th>
-                    <th className="text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vectorFiles.map((file, index) => (
-                    <tr 
-                      key={file.id} 
-                      className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
-                    >
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <FaFileAlt className="text-primary" />
-                          {file.filename}
+              {/* Table view for larger screens */}
+              <div className="hidden sm:block">
+                <table className="table-modern min-w-full">
+                  <thead>
+                    <tr>
+                      <th>File Name</th>
+                      <th className="text-center">Size</th>
+                      <th className="text-center">Date</th>
+                      <th className="text-center">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vectorFiles.map((file, index) => (
+                      <tr 
+                        key={file.id} 
+                        className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
+                      >
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaFileAlt className="text-primary flex-shrink-0" />
+                            <span className="break-all">{file.filename}</span>
+                          </div>
+                        </td>
+                        <td className="text-center">{formatFileSize(file.size)}</td>
+                        <td className="text-center">
+                          {new Date(file.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={() => handleDeleteFile(file.id)}
+                            className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Card view for mobile */}
+              <div className="block sm:hidden">
+                <div className="space-y-3 p-4">
+                  {vectorFiles.map((file) => (
+                    <div key={file.id} className="p-4 bg-card-bg border border-card-border rounded-lg">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FaFileAlt className="text-primary flex-shrink-0" />
+                            <span className="text-sm font-medium break-all">{file.filename}</span>
+                          </div>
+                          <div className="text-xs text-muted space-y-1">
+                            <div>Size: {formatFileSize(file.size)}</div>
+                            <div>Date: {new Date(file.created_at).toLocaleDateString()}</div>
+                          </div>
                         </div>
-                      </td>
-                      <td className="text-center">{formatFileSize(file.size)}</td>
-                      <td className="text-center">
-                        {new Date(file.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="text-center">
                         <button
                           onClick={() => handleDeleteFile(file.id)}
-                          className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
+                          className="p-2 rounded-full hover:bg-red-500/20 text-error transition flex-shrink-0"
                           title="Delete"
                         >
-                          <FaTrash />
+                          <FaTrash size={14} />
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
+            <div className="text-center p-6 sm:p-8 rounded-xl bg-card-bg border border-card-border">
               <p className="text-muted">No files have been added to the knowledge base yet.</p>
               <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant&apos;s capabilities.</p>
             </div>
@@ -795,15 +844,15 @@ export default function AdminProjectDetail() {
 
       {/* Modal for changing AI model */}
       {isModelChangeOpen && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50">
-          <div className="glass-card p-8 rounded-xl w-96 border border-card-border animate-fadeIn">
-            <h2 className="card-header text-2xl mb-6">Change AI Model</h2>
-            <div className="mb-6">
-              <label className="form-label mb-2">Select Model</label>
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm z-50 p-3 sm:p-4">
+          <div className="glass-card p-4 sm:p-8 rounded-xl w-full max-w-md border border-card-border animate-fadeIn">
+            <h2 className="card-header text-lg sm:text-2xl mb-4 sm:mb-6">Change AI Model</h2>
+            <div className="mb-4 sm:mb-6">
+              <label className="form-label mb-2 text-sm sm:text-base">Select Model</label>
               <select
                 value={selectedModel}
                 onChange={(e) => setSelectedModel(e.target.value)}
-                className="input-field"
+                className="input-field text-sm sm:text-base"
               >
                 <option value="">Select a model...</option>
                 <option value="gpt-4o">GPT-4o</option>
@@ -811,21 +860,18 @@ export default function AdminProjectDetail() {
                 <option value="gpt-4">GPT-4</option>
                 <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
               </select>
-              <p className="text-xs text-muted mt-2">
-                Different models have different capabilities and pricing. Choose the one that best fits your needs.
-              </p>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
               <button
                 onClick={() => setIsModelChangeOpen(false)}
-                className="btn-ghost px-4 py-2"
+                className="btn-ghost px-3 py-2 sm:px-4 sm:py-2 order-2 sm:order-1 text-sm sm:text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={updateModel}
                 disabled={!selectedModel || isUpdating}
-                className="btn-gradient px-4 py-2"
+                className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 order-1 sm:order-2 text-sm sm:text-base"
               >
                 {isUpdating ? 'Updating...' : 'Update Model'}
               </button>

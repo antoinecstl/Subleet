@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     }
     const primaryEmail = user.emailAddresses[0].emailAddress;
 
-    // Get the client ID first
+    // Get the client ID first - récupération seulement de l'id nécessaire
     const { data: clientData, error: clientError } = await supabase
       .from('clients')
       .select('id')
@@ -42,10 +42,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    // Now fetch the project and verify ownership
+    // Now fetch the project and verify ownership - récupération seulement des champs utilisés
     const { data: projectData, error: projectError } = await supabase
       .from('projects')
-      .select('*')
+      .select('project_id, project_name, working, creation_timestamp, project_url, edge_function_slug, project_owner')
       .eq('project_id', projectId)
       .single();
 
@@ -58,17 +58,17 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized access to project' }, { status: 403 });
     }
 
-    // Fetch vector store info
+    // Fetch vector store info - récupération seulement de l'openai_vector_id utilisé
     const { data: vectorStoreData } = await supabase
       .from('vector_stores')
       .select('openai_vector_id')
       .eq('project_id', projectId)
       .single();
       
-    // Fetch assistant info
+    // Fetch assistant info - récupération seulement de l'openai_assistant_id (model retiré car non utilisé)
     const { data: assistantData } = await supabase
       .from('assistants')
-      .select('openai_assistant_id, model')
+      .select('openai_assistant_id')
       .eq('project_id', projectId)
       .single();
 
@@ -83,14 +83,20 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({
-      project: projectData,
+      project: {
+        project_id: projectData.project_id,
+        project_name: projectData.project_name,
+        working: projectData.working,
+        creation_timestamp: projectData.creation_timestamp,
+        project_url: projectData.project_url
+      },
       vectorStoreId: vectorStoreData?.openai_vector_id || null,
       assistantId: assistantData?.openai_assistant_id || null,
       assistant: assistantDetails ? {
         instructions: assistantDetails.instructions,
         model: assistantDetails.model
       } : null,
-      projectUrl: projectData?.project_url || null
+      edgeFunctionSlug: projectData?.edge_function_slug || null
     });
 
   } catch (error) {

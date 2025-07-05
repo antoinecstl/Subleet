@@ -4,8 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import Toast from '../../../components/Toast';
-import { getCache, setCache } from '@/lib/cache-utils';
-import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy } from 'react-icons/fa';
+import ApiKeyRegenerate from '../../../components/ApiKeyRegenerate';
+import { FaTrash, FaUpload, FaFileAlt, FaSync, FaCopy, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 interface VectorFile {
   id: string;
@@ -30,13 +30,6 @@ interface AssistantInfo {
   name?: string;
 }
 
-interface ProjectData {
-  project: Project;
-  assistant: AssistantInfo | null;
-  vectorStoreId: string | null;
-  assistantId: string | null;
-}
-
 export default function ProjectDetail() {
   const { id } = useParams();
   const router = useRouter();
@@ -51,15 +44,17 @@ export default function ProjectDetail() {
   // States for assistant
   const [assistantInfo, setAssistantInfo] = useState<AssistantInfo | null>(null);
   
+  // States for edge function
+  const [edgeFunctionUrl, setEdgeFunctionUrl] = useState<string | null>(null);
+  const [urlVisible, setUrlVisible] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
+  
   // States for Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [vectorStoreId, setVectorStoreId] = useState<string | null>(null);
-  const [assistantId, setAssistantId] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState(false);
   const fetchVectorFiles = useCallback(async () => {
     try {
       setLoadingFiles(true);
@@ -78,21 +73,9 @@ export default function ProjectDetail() {
   }, [id]);
 
   useEffect(() => {
-    const fetchProjectData = async (bypassCache = false) => {
+    const fetchProjectData = async () => {
       try {
         setLoading(true);
-        if (!bypassCache) {
-          const cachedData = getCache<ProjectData>(`cache_project_${id}`);
-          if (cachedData) {
-            setProject(cachedData.project);
-            setAssistantInfo(cachedData.assistant || null);
-            setEditedInstructions(cachedData.assistant?.instructions || '');
-            setVectorStoreId(cachedData.vectorStoreId || null);
-            setAssistantId(cachedData.assistantId || null);
-            setLoading(false);
-            return;
-          }
-        }
         
         const response = await fetch(`/api/public/fetch/project?project_id=${id}`);
         if (!response.ok) {
@@ -107,16 +90,13 @@ export default function ProjectDetail() {
         setProject(data.project);
         setAssistantInfo(data.assistant || null);
         setEditedInstructions(data.assistant?.instructions || '');
-        setVectorStoreId(data.vectorStoreId || null);
-        setAssistantId(data.assistantId || null);
         
-        // Cache the result
-        setCache(`cache_project_${id}`, { 
-          project: data.project,
-          assistant: data.assistant,
-          vectorStoreId: data.vectorStoreId,
-          assistantId: data.assistantId
-        });
+        // Construire l'URL de la fonction edge
+        if (data.edgeFunctionSlug) {
+          const url = `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}${data.edgeFunctionSlug}`;
+          setEdgeFunctionUrl(url);
+        }
+        
       } catch (error) {
         console.error('Error fetching project:', error);
         setToast({ message: error instanceof Error ? error.message : 'Failed to fetch project data', type: 'error' });
@@ -162,17 +142,8 @@ export default function ProjectDetail() {
         setAssistantInfo({ ...assistantInfo, instructions: editedInstructions });
       }
       setIsEditing(false);
-      setToast({ message: 'Instructions updated successfully', type: 'success' });      // Update cache
-      const cachedData = getCache<ProjectData>(`cache_project_${id}`);
-      if (cachedData && cachedData.assistant) {
-        setCache(`cache_project_${id}`, { 
-          ...cachedData, 
-          assistant: { ...cachedData.assistant, instructions: editedInstructions }
-        });
-      }
+      setToast({ message: 'Instructions updated successfully', type: 'success' });
       
-      // Invalidate dashboard cache to reflect changes
-      localStorage.removeItem('cache_user_dashboard');
     } catch (error) {
       console.error('Error updating instructions:', error);
       setToast({ message: error instanceof Error ? error.message : 'Failed to update instructions', type: 'error' });
@@ -254,76 +225,80 @@ export default function ProjectDetail() {
     else return (bytes / 1073741824).toFixed(1) + ' GB';
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        setCopySuccess(true);
-        setToast({ message: 'ID copied to clipboard', type: 'success' });
-        setTimeout(() => setCopySuccess(false), 2000);
-      })
-      .catch(err => {
-        console.error('Could not copy text: ', err);
-        setToast({ message: 'Copy failed', type: 'error' });
-      });
+  const handleToggleUrl = () => {
+    setUrlVisible(!urlVisible);
+  };
+
+  const handleCopyUrl = async () => {
+    if (edgeFunctionUrl) {
+      try {
+        await navigator.clipboard.writeText(edgeFunctionUrl);
+        setUrlCopied(true);
+        setToast({ message: 'URL copied to clipboard!', type: 'success' });
+        setTimeout(() => setUrlCopied(false), 2000);
+      } catch {
+        setToast({ message: 'Failed to copy URL', type: 'error' });
+      }
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
   
   if (!project) {
     return (
-      <div className="min-h-screen p-6">
+      <div className="min-h-screen p-3 sm:p-6">
         <button 
           onClick={() => router.back()} 
-          className="btn-gradient px-6 py-2 mb-6"
+          className="btn-gradient px-4 py-2 sm:px-6 sm:py-2 mb-4 sm:mb-6 text-sm sm:text-base"
         >
           &larr; Back
         </button>
-        <div className="alert alert-error">Project not found.</div>
+        <div className="alert alert-error text-sm sm:text-base">Project not found.</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 relative overflow-hidden">
+    <div className="min-h-screen p-3 sm:p-6 relative overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-20 left-10 w-64 h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
-      <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
+      <div className="absolute top-10 sm:top-20 left-5 sm:left-10 w-32 h-32 sm:w-64 sm:h-64 rounded-full bg-primary opacity-5 blur-3xl"></div>
+      <div className="absolute bottom-10 sm:bottom-20 right-5 sm:right-10 w-40 h-40 sm:w-80 sm:h-80 rounded-full bg-secondary opacity-5 blur-3xl"></div>
       
       <div className="relative z-10 content-container">
         <button 
           onClick={() => router.back()} 
-          className="mb-6 px-6 py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1"
+          className="mb-4 sm:mb-6 px-4 py-2 sm:px-6 sm:py-2 rounded-full bg-gradient-to-r from-primary to-secondary hover:from-[var(--button-hover-from)] hover:to-[var(--button-hover-to)] text-white shadow-lg hover:shadow-primary/20 transition duration-300 flex items-center gap-2 transform hover:translate-x-1 text-sm sm:text-base"
         >
           &larr; <span>Back</span>
         </button>
         
         {/* Project Details Card */}
-        <div className="mb-8 p-8 glass-card rounded-xl">
-          <div className="flex justify-between items-center mb-8">
-            <h1 className="text-3xl font-bold card-header m-0">
+        <div className="mb-4 sm:mb-8 p-3 sm:p-8 glass-card rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-bold card-header m-0 break-words">
               {project.project_name}
             </h1>
-            <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
+            <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'} self-start sm:self-auto`}>
               {project.working ? 'Active' : 'Inactive'}
             </div>
           </div>
           
           {/* Project details section */}
-          <div className="p-6 glass-card rounded-xl mb-6">
-            <h3 className="card-header">Project Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
+            <h3 className="card-header text-lg sm:text-xl">Project Details</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3">
                 {/* ID du projet supprimé pour l'interface publique */}
                 {project.creation_timestamp && (
                   <div>
                     <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
-                    <span>{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
+                    <span className="text-sm sm:text-base">{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
                   </div>
                 )}
                 <div>
@@ -333,22 +308,16 @@ export default function ProjectDetail() {
                       href={project.project_url} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="text-primary underline hover:text-primary-light break-all transition-colors"
+                      className="text-primary underline hover:text-primary-light break-all transition-colors text-sm sm:text-base"
                     >
                       {project.project_url}
                     </a>
                   ) : (
-                    <span className="text-muted">No URL provided</span>
+                    <span className="text-muted text-sm sm:text-base">No URL provided</span>
                   )}
                 </div>
               </div>
               <div className="space-y-3">
-                {assistantInfo?.model && (
-                  <div>
-                    <span className="text-sm font-semibold text-muted block mb-1">AI Model</span>
-                    <span>{assistantInfo.model}</span>
-                  </div>
-                )}
                 <div>
                   <span className="text-sm font-semibold text-muted block mb-1">Status</span>
                   <span className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
@@ -359,90 +328,39 @@ export default function ProjectDetail() {
             </div>
           </div>
           
-          {/* Important IDs section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            {/* Vector Store ID */}
-            {vectorStoreId && (
-              <div className="p-6 glass-card rounded-xl h-full">
-                <h3 className="card-header">
-                  Vector Store ID
-                </h3>
-                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
-                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                    {vectorStoreId}
-                  </code>
-                  <button 
-                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
-                    onClick={() => copyToClipboard(vectorStoreId)}
-                    title="Copy ID"
-                  >
-                    <FaCopy size={16} />
-                  </button>
-                </div>
-                <p className="text-xs text-muted mt-3">
-                  This identifier is needed to integrate RAG functionality into your chatbot.
-                </p>
-              </div>
-            )}
-            
-            {/* Assistant ID */}
-            {assistantId && (
-              <div className="p-6 glass-card rounded-xl h-full">
-                <h3 className="card-header">
-                  Assistant ID
-                </h3>
-                <div className="flex items-center gap-2 bg-card-bg px-4 py-3 rounded-lg border border-card-border max-w-full overflow-hidden">
-                  <code className="text-sm text-primary overflow-hidden text-ellipsis whitespace-nowrap flex-grow">
-                    {assistantId}
-                  </code>
-                  <button 
-                    className={`p-2 rounded-full hover:bg-card-hover-border transition-colors ${copySuccess ? 'text-success' : 'text-muted'}`}
-                    onClick={() => copyToClipboard(assistantId)}
-                    title="Copy ID"
-                  >
-                    <FaCopy size={16} />
-                  </button>
-                </div>
-                <p className="text-xs text-muted mt-3">
-                  Use this identifier to connect your application to the AI chat service.
-                </p>
-              </div>
-            )}
-          </div>
-          
           {/* Instructions section */}
-          <div className="p-6 glass-card rounded-xl">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="card-header mb-0">
+          <div className="p-3 sm:p-6 glass-card rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+              <h3 className="card-header mb-0 text-lg sm:text-xl">
                 Assistant Instructions
               </h3>
               {!isEditing ? (
                 <button 
                   onClick={() => setIsEditing(true)}
-                  className="btn-gradient px-4 py-2"
+                  className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base self-start sm:self-auto"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                   </svg>
                   Edit
                 </button>
               ) : (
-                <div className="space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <button 
                     onClick={handleSaveInstructions}
                     disabled={isUpdating}
-                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-4 py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center"
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-3 py-2 sm:px-4 sm:py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center justify-center"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                     {isUpdating ? 'Saving...' : 'Save'}
                   </button>
                   <button 
                     onClick={handleCancelEdit}
-                    className="btn-ghost px-4 py-2 border border-card-border"
+                    className="btn-ghost px-3 py-2 sm:px-4 sm:py-2 border border-card-border text-sm"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                     </svg>
                     Cancel
@@ -476,15 +394,90 @@ export default function ProjectDetail() {
           </div>
         </div>
         
+        {/* Credentials Section */}
+        <div className="mb-4 sm:mb-8 p-3 sm:p-8 glass-card rounded-xl">
+          <h2 className="card-header mb-4 sm:mb-6 text-lg sm:text-xl">
+            Credentials
+          </h2>
+          
+          <div className="space-y-4 sm:space-y-6">
+            {/* Edge Function URL */}
+            <div>
+              <label className="text-sm font-semibold text-muted block mb-2">
+                Edge Function URL
+              </label>
+              <div className="p-3 rounded-lg bg-card-bg border border-card-border">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 font-mono text-xs sm:text-sm break-all min-w-0">
+                    {edgeFunctionUrl ? (
+                      urlVisible ? (
+                        edgeFunctionUrl
+                      ) : (
+                        <div className="overflow-hidden">
+                          <span className="block truncate">••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••</span>
+                        </div>
+                      )
+                    ) : (
+                      'N/A'
+                    )}
+                  </div>
+                  {edgeFunctionUrl && (
+                    <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                      <button
+                        onClick={handleToggleUrl}
+                        className="p-1.5 sm:p-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary transition duration-200"
+                        title={urlVisible ? "Hide URL" : "Show URL"}
+                      >
+                        {urlVisible ? <FaEyeSlash className="text-xs sm:text-sm" /> : <FaEye className="text-xs sm:text-sm" />}
+                      </button>
+                      {urlVisible && (
+                        <button
+                          onClick={handleCopyUrl}
+                          className={`p-1.5 sm:p-2 rounded-lg transition duration-200 ${
+                            urlCopied 
+                              ? 'bg-green-500/10 text-green-500' 
+                              : 'bg-primary/10 hover:bg-primary/20 text-primary'
+                          }`}
+                          title={urlCopied ? 'Copied!' : 'Copy URL'}
+                        >
+                          <FaCopy className="text-xs sm:text-sm" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* API Key */}
+            <div>
+              <label className="text-sm font-semibold text-muted block mb-2">
+                API Key
+              </label>
+              <div className="p-3 rounded-lg bg-card-bg border border-card-border font-mono text-xs sm:text-sm overflow-hidden">
+                <span className="block truncate">••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••</span>
+              </div>
+              <div className="mt-4">
+                <ApiKeyRegenerate 
+                  projectId={id as string}
+                  onKeyRegenerated={() => {
+                    setToast({ message: 'API key regenerated successfully', type: 'success' });
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
         {/* Vector Store Files Section */}
-        <div className="p-8 glass-card rounded-xl mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="card-header mb-0">
+        <div className="mb-4 sm:mb-8 p-3 sm:p-8 glass-card rounded-xl">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <h2 className="card-header mb-0 text-lg sm:text-xl">
               Reference Documents
             </h2>
             <button 
               onClick={fetchVectorFiles}
-              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300"
+              className="p-2 rounded-full hover:bg-card-hover-border transition duration-300 self-start sm:self-auto"
               disabled={loadingFiles}
               title="Refresh list"
             >
@@ -492,15 +485,15 @@ export default function ProjectDetail() {
             </button>
           </div>
 
-          <div className="mb-6 p-5 rounded-xl bg-card-bg border border-card-border">
-            <div className="flex flex-col sm:flex-row items-center gap-4 mb-3">
-              <div className="flex-grow w-full">
+          <div className="mb-4 sm:mb-6 p-3 sm:p-5 rounded-xl bg-card-bg border border-card-border">
+            <div className="flex flex-col gap-3 sm:gap-4 mb-3">
+              <div className="w-full">
                 <input
                   type="file"
                   onChange={handleFileChange}
-                  className="w-full text-sm file:mr-4 file:py-2 file:px-4
+                  className="w-full text-xs sm:text-sm file:mr-2 sm:file:mr-4 file:py-1.5 sm:file:py-2 file:px-3 sm:file:px-4
                     file:rounded-full file:border-0
-                    file:text-sm file:font-semibold file:cursor-pointer
+                    file:text-xs sm:file:text-sm file:font-semibold file:cursor-pointer
                     file:bg-gradient-to-r file:from-primary file:to-secondary file:text-white
                     hover:file:from-[var(--button-hover-from)] hover:file:to-[var(--button-hover-to)]
                     cursor-pointer"
@@ -511,9 +504,9 @@ export default function ProjectDetail() {
               <button
                 onClick={handleFileUpload}
                 disabled={!selectedFile || isUploading}
-                className="btn-gradient px-5 py-2 flex items-center gap-2 w-full sm:w-auto justify-center"
+                className="btn-gradient px-4 py-2 sm:px-5 sm:py-2 flex items-center gap-2 justify-center text-sm sm:text-base"
               >
-                <FaUpload />
+                <FaUpload className="text-xs sm:text-sm" />
                 {isUploading ? 'Uploading...' : 'Upload'}
               </button>
             </div>
@@ -522,54 +515,86 @@ export default function ProjectDetail() {
           </div>
 
           {loadingFiles ? (
-            <div className="flex justify-center items-center p-8">
-              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center items-center p-6 sm:p-8">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : vectorFiles.length > 0 ? (
             <div className="overflow-hidden rounded-xl bg-card-bg border border-card-border">
-              <table className="table-modern min-w-full">
-                <thead>
-                  <tr>
-                    <th>File Name</th>
-                    <th className="text-center">Size</th>
-                    <th className="text-center">Date</th>
-                    <th className="text-center">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vectorFiles.map((file, index) => (
-                    <tr 
-                      key={file.id} 
-                      className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
-                    >
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <FaFileAlt className="text-primary" />
-                          {file.filename}
-                        </div>
-                      </td>
-                      <td className="text-center">{formatFileSize(file.size)}</td>
-                      <td className="text-center">
-                        {new Date(file.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="text-center">
-                        <button
-                          onClick={() => handleDeleteFile(file.id)}
-                          className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
-                          title="Delete"
-                        >
-                          <FaTrash />
-                        </button>
-                      </td>
+              {/* Mobile-first responsive table */}
+              <div className="hidden sm:block">
+                <table className="table-modern min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="text-left">File Name</th>
+                      <th className="text-center">Size</th>
+                      <th className="text-center">Date</th>
+                      <th className="text-center">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {vectorFiles.map((file, index) => (
+                      <tr 
+                        key={file.id} 
+                        className={index !== vectorFiles.length-1 ? 'border-b border-card-border' : ''}
+                      >
+                        <td>
+                          <div className="flex items-center gap-2">
+                            <FaFileAlt className="text-primary flex-shrink-0" />
+                            <span className="break-all">{file.filename}</span>
+                          </div>
+                        </td>
+                        <td className="text-center">{formatFileSize(file.size)}</td>
+                        <td className="text-center">
+                          {new Date(file.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="text-center">
+                          <button
+                            onClick={() => handleDeleteFile(file.id)}
+                            className="p-2 rounded-full hover:bg-red-500/20 text-error transition"
+                            title="Delete"
+                          >
+                            <FaTrash />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile card layout */}
+              <div className="sm:hidden space-y-3 p-3">
+                {vectorFiles.map((file) => (
+                  <div key={file.id} className="bg-white/50 rounded-lg p-3 border border-card-border">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <FaFileAlt className="text-primary flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm break-all">{file.filename}</p>
+                          <div className="flex flex-col gap-1 mt-1 text-xs text-muted">
+                            <span>{formatFileSize(file.size)}</span>
+                            <span>{new Date(file.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteFile(file.id)}
+                        className="p-2 rounded-full hover:bg-red-500/20 text-error transition flex-shrink-0"
+                        title="Delete"
+                      >
+                        <FaTrash className="text-sm" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            <div className="text-center p-8 rounded-xl bg-card-bg border border-card-border">
-              <p className="text-muted">No files have been added to the knowledge base yet.</p>
-              <p className="text-sm text-muted mt-2">Upload documents to enhance your assistant&aposs capabilities.</p>
+            <div className="text-center p-6 sm:p-8 rounded-xl bg-card-bg border border-card-border">
+              <p className="text-muted text-sm sm:text-base">No files have been added to the knowledge base yet.</p>
+              <p className="text-xs sm:text-sm text-muted mt-2">
+                Upload documents to enhance your assistant&apos;s capabilities.
+              </p>
             </div>
           )}
         </div>

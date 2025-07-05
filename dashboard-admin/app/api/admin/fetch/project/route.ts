@@ -90,7 +90,8 @@ export async function GET(request: Request) {
       assistantId: assistantData?.openai_assistant_id || null,
       assistant: assistant,
       projectUrl: projectData?.project_url || null,
-      apiKey: apiKey
+      apiKey: apiKey,
+      edgeFunctionSlug: projectData?.edge_function_slug || null
     });
 
   } catch (error) {

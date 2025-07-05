@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface ExistingApiKeyDisplayProps {
   projectId: string;
@@ -10,11 +10,7 @@ export default function ExistingApiKeyDisplay({ projectId }: ExistingApiKeyDispl
   const [apiKeyStatus, setApiKeyStatus] = useState<'checking' | 'already-displayed' | 'available' | 'error'>('checking');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    checkApiKeyStatus();
-  }, [projectId]);
-
-  const checkApiKeyStatus = async () => {
+  const checkApiKeyStatus = useCallback(async () => {
     try {
       const response = await fetch(`/api/public/projects/api-key/${projectId}`);
       const data = await response.json();
@@ -32,7 +28,11 @@ export default function ExistingApiKeyDisplay({ projectId }: ExistingApiKeyDispl
       setError('Failed to check API key status');
       setApiKeyStatus('error');
     }
-  };
+  }, [projectId]);
+
+  useEffect(() => {
+    checkApiKeyStatus();
+  }, [checkApiKeyStatus]);
 
   const generateNewApiKey = () => {
     // Cette fonction pourrait être implémentée pour régénérer une clé API
