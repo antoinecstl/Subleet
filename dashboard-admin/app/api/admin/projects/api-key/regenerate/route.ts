@@ -22,12 +22,6 @@ export async function POST(request: NextRequest) {
         if (!user || !user.emailAddresses || user.emailAddresses.length === 0) {
             return NextResponse.json({ error: 'User email not found' }, { status: 400 });
         }
-        const primaryEmail = user.emailAddresses[0].emailAddress;
-        
-        // Vérifier les privilèges admin
-        if (!process.env.ADMIN_EMAILS?.split(',').includes(primaryEmail)) {
-            return NextResponse.json({ error: 'Forbidden - Admin access required' }, { status: 403 });
-        }
         
         // Récupérer les données de la requête
         const { projectId } = await request.json();
