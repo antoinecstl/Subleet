@@ -49,6 +49,11 @@ export default function ProjectDetail() {
   const [urlVisible, setUrlVisible] = useState(false);
   const [urlCopied, setUrlCopied] = useState(false);
   
+  // States for project URL editing
+  const [editedProjectUrl, setEditedProjectUrl] = useState('');
+  const [isEditingUrl, setIsEditingUrl] = useState(false);
+  const [isUpdatingUrl, setIsUpdatingUrl] = useState(false);
+  
   // States for Vector Store
   const [vectorFiles, setVectorFiles] = useState<VectorFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -90,6 +95,7 @@ export default function ProjectDetail() {
         setProject(data.project);
         setAssistantInfo(data.assistant || null);
         setEditedInstructions(data.assistant?.instructions || '');
+        setEditedProjectUrl(data.project?.project_url || '');
         
         // Construire l'URL de la fonction edge
         if (data.edgeFunctionSlug) {
@@ -155,6 +161,54 @@ export default function ProjectDetail() {
   const handleCancelEdit = () => {
     setEditedInstructions(assistantInfo?.instructions || '');
     setIsEditing(false);
+  };
+
+  const handleSaveProjectUrl = async () => {
+    if (isUpdatingUrl) return;
+    
+    // Validate URL format
+    if (editedProjectUrl.trim()) {
+      try {
+        new URL(editedProjectUrl.trim());
+      } catch {
+        setToast({ message: 'Please enter a valid URL (e.g., https://example.com)', type: 'error' });
+        return;
+      }
+    }
+    
+    setIsUpdatingUrl(true);
+    try {
+      const response = await fetch('/api/public/projects/update', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          project_id: id, 
+          project_url: editedProjectUrl.trim() || null 
+        })
+      });
+        if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      if (project) {
+        setProject({ ...project, project_url: editedProjectUrl.trim() || undefined });
+      }
+      setIsEditingUrl(false);
+      setToast({ message: 'Project URL updated successfully', type: 'success' });
+      
+    } catch (error) {
+      console.error('Error updating project URL:', error);
+      setToast({ message: error instanceof Error ? error.message : 'Failed to update project URL', type: 'error' });
+    } finally {
+      setIsUpdatingUrl(false);
+    }
+  };
+
+  const handleCancelUrlEdit = () => {
+    setEditedProjectUrl(project?.project_url || '');
+    setIsEditingUrl(false);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -291,7 +345,42 @@ export default function ProjectDetail() {
           
           {/* Project details section */}
           <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
-            <h3 className="card-header text-lg sm:text-xl">Project Details</h3>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+              <h3 className="card-header text-lg sm:text-xl mb-0">Project Details</h3>
+              {!isEditingUrl ? (
+                <button 
+                  onClick={() => setIsEditingUrl(true)}
+                  className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base self-start sm:self-auto"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  Edit URL
+                </button>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={handleSaveProjectUrl}
+                    disabled={isUpdatingUrl}
+                    className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-3 py-2 sm:px-4 sm:py-2 rounded-full text-white text-sm transition duration-300 inline-flex items-center justify-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                    {isUpdatingUrl ? 'Saving...' : 'Save'}
+                  </button>
+                  <button 
+                    onClick={handleCancelUrlEdit}
+                    className="btn-ghost px-3 py-2 sm:px-4 sm:py-2 border border-card-border text-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
               <div className="space-y-3">
                 {/* ID du projet supprimé pour l'interface publique */}
@@ -303,17 +392,34 @@ export default function ProjectDetail() {
                 )}
                 <div>
                   <span className="text-sm font-semibold text-muted block mb-1">Project URL</span>
-                  {project.project_url ? (
-                    <a 
-                      href={project.project_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-primary underline hover:text-primary-light break-all transition-colors text-sm sm:text-base"
-                    >
-                      {project.project_url}
-                    </a>
+                  {isEditingUrl ? (
+                    <div className="space-y-2">
+                      <input
+                        type="url"
+                        value={editedProjectUrl}
+                        onChange={(e) => setEditedProjectUrl(e.target.value)}
+                        className="input-field w-full"
+                        placeholder="https://example.com"
+                      />
+                      <p className="text-xs text-muted">
+                        This URL will be allowed for CORS requests to your Edge Function.
+                      </p>
+                    </div>
                   ) : (
-                    <span className="text-muted text-sm sm:text-base">No URL provided</span>
+                    <>
+                      {project.project_url ? (
+                        <a 
+                          href={project.project_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-primary underline hover:text-primary-light break-all transition-colors text-sm sm:text-base"
+                        >
+                          {project.project_url}
+                        </a>
+                      ) : (
+                        <span className="text-muted text-sm sm:text-base">No URL provided</span>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
