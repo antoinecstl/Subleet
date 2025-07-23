@@ -22,7 +22,7 @@ export default function ProjectCreationWizard() {
   const [apiKeyViewed, setApiKeyViewed] = useState(false);
   const [projectData, setProjectData] = useState({
     name: '',
-    url: '',
+    // URL is no longer needed as projects start in development mode
   });
   const [createdProject, setCreatedProject] = useState<ProjectCreationResult | null>(null);
 
@@ -99,21 +99,16 @@ export default function ProjectCreationWizard() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label htmlFor="url" className="block text-sm font-medium text-gray-700">
-                Project URL
-              </label>
-              <input
-                id="url"
-                type="text"
-                value={projectData.url}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setProjectData(prev => ({ ...prev, url: e.target.value }))
-                }
-                placeholder="https://your-project-url.com or if local, use *"
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex items-start gap-3">
+                <div>
+                  <h4 className="text-blue-800 font-medium">Development Mode</h4>
+                  <p className="text-blue-700 text-sm mt-1">
+                    Your project will start in development mode, accepting requests from any domain. 
+                    You can switch to production mode later from your project dashboard.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {error && (
@@ -131,7 +126,7 @@ export default function ProjectCreationWizard() {
 
             <button
               type="submit"
-              disabled={isLoading || !projectData.name || !projectData.url}
+              disabled={isLoading || !projectData.name}
               className="w-full btn-gradient px-4 py-2 text-base md:text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md"
             >
               {isLoading ? (
@@ -189,25 +184,7 @@ export default function ProjectCreationWizard() {
           projectId={createdProject.project.project_id}
           onApiKeyViewed={handleApiKeyViewed}
         />
-        
-        {!apiKeyViewed && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start gap-3">
-              <div className="w-5 h-5 text-amber-600 mt-0.5">
-                <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-                </svg>
-              </div>
-              <div>
-                <p className="font-medium text-amber-800">Action Required</p>
-                <p className="text-amber-700 text-sm mt-1">
-                    You must first reveal and copy your API key before you can continue. This key will only be shown once.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-        
+              
         <div className="flex justify-center">
           <button 
             onClick={handleFinish}
@@ -218,7 +195,7 @@ export default function ProjectCreationWizard() {
                 : 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
             }`}
           >
-            {apiKeyViewed ? 'Go to Dashboard' : 'Please reveal your API key first'}
+            {apiKeyViewed ? 'Go to Dashboard' : 'Please reveal your API key to continue'}
           </button>
         </div>
       </div>

@@ -56,9 +56,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Project name is required' }, { status: 400 });
         }
         
-        if (!projectData.url) {
-            return NextResponse.json({ error: 'Project URL is required' }, { status: 400 });
-        }
+        // Note: URL is no longer required as projects start in development mode
 
         // Check if the model is supported (use the default model if not specified)
         const model = 'gpt-4.1-nano';
@@ -103,11 +101,11 @@ export async function POST(request: NextRequest) {
         // Encrypt the API key for secure storage
         const encryptedApiKey = encryptApiKey(apiKey, process.env.API_ENCRYPTION_SECRET);
 
-        // Create the new project
+        // Create the new project in development mode by default
         const newProject = {
             project_name: projectData.name,
             project_owner: clientData.id,
-            project_url: projectData.url,
+            project_url: "*", // Development mode: accept all origins
             working: true, // Active project by default
             edge_function_slug: edgeFunctionSlug // Unique slug with identifier
             // The fields creation_timestamp and project_id are generated automatically
@@ -187,7 +185,7 @@ export async function POST(request: NextRequest) {
             edgeFunctionData = await deployEdgeFunction(
                 process.env.SUPABASE_PROJECT_REF!, 
                 functionName,
-                projectData.url,          // Pass the project URL for CORS
+                "*",                      // Development mode: accept all origins for CORS
                 true,                     // Enabled by default
                 projectData.name,         // Project name
                 vectorStoreId,            // Hardcoded Vector Store ID

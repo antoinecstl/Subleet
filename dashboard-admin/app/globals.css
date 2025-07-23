@@ -386,6 +386,22 @@ body:not(.light-theme) {
     @apply bg-red-500/20 text-red-400 border border-red-500/30;
   }
   
+  body.light-theme .status-development {
+    @apply bg-yellow-100 text-yellow-700 border border-yellow-300;
+  }
+  
+  body:not(.light-theme) .status-development {
+    @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+  }
+  
+  body.light-theme .status-production {
+    @apply bg-emerald-100 text-emerald-700 border border-emerald-300;
+  }
+  
+  body:not(.light-theme) .status-production {
+    @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+  }
+  
   /* Theme toggle control */
   .theme-toggle {
     @apply w-10 h-6 rounded-full relative transition-colors duration-300 cursor-pointer flex items-center;

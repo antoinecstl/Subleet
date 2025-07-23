@@ -40,11 +40,15 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Project URL is required' }, { status: 400 });
     }
 
-    // Validate URL format
-    try {
-      new URL(project_url);
-    } catch {
-      return NextResponse.json({ error: 'Invalid URL format' }, { status: 400 });
+    // Validate URL format - allow "*" for development mode or valid URL for production
+    if (project_url !== "*") {
+      try {
+        new URL(project_url);
+      } catch {
+        return NextResponse.json({ 
+          error: 'Invalid URL format. Use "*" for development mode or a valid URL (e.g., https://example.com) for production mode.' 
+        }, { status: 400 });
+      }
     }
 
     // Get the current project and verify ownership
@@ -146,7 +150,7 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ 
-      message: 'Project URL updated successfully.', 
+      message: `Project ${project_url === "*" ? "switched to development mode" : "switched to production mode"} successfully.`, 
       project: updatedProject 
     });
 

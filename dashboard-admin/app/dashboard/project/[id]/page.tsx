@@ -166,15 +166,18 @@ export default function ProjectDetail() {
   const handleSaveProjectUrl = async () => {
     if (isUpdatingUrl) return;
     
-    // Validate URL format
-    if (editedProjectUrl.trim()) {
+    // Validate URL format - allow "*" for development mode
+    if (editedProjectUrl.trim() && editedProjectUrl.trim() !== "*") {
       try {
         new URL(editedProjectUrl.trim());
       } catch {
-        setToast({ message: 'Please enter a valid URL (e.g., https://example.com)', type: 'error' });
+        setToast({ message: 'Please enter a valid URL (e.g., https://example.com) or "*" for development mode', type: 'error' });
         return;
       }
     }
+    
+    // If empty, default to development mode
+    const urlToSave = editedProjectUrl.trim() || "*";
     
     setIsUpdatingUrl(true);
     try {
@@ -183,7 +186,7 @@ export default function ProjectDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           project_id: id, 
-          project_url: editedProjectUrl.trim() || null 
+          project_url: urlToSave
         })
       });
         if (!response.ok) {
@@ -193,14 +196,14 @@ export default function ProjectDetail() {
       
       const data = await response.json();
       if (project) {
-        setProject({ ...project, project_url: editedProjectUrl.trim() || undefined });
+        setProject({ ...project, project_url: urlToSave });
       }
       setIsEditingUrl(false);
-      setToast({ message: 'Project URL updated successfully', type: 'success' });
+      setToast({ message: data.message || 'Project mode updated successfully', type: 'success' });
       
     } catch (error) {
       console.error('Error updating project URL:', error);
-      setToast({ message: error instanceof Error ? error.message : 'Failed to update project URL', type: 'error' });
+      setToast({ message: error instanceof Error ? error.message : 'Failed to update project mode', type: 'error' });
     } finally {
       setIsUpdatingUrl(false);
     }
@@ -338,26 +341,21 @@ export default function ProjectDetail() {
             <h1 className="text-2xl sm:text-3xl font-bold card-header m-0 break-words">
               {project.project_name}
             </h1>
-            <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'} self-start sm:self-auto`}>
-              {project.working ? 'Active' : 'Inactive'}
+            <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-auto">
+              <div className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
+                {project.working ? 'Active' : 'Inactive'}
+              </div>
+              <div className={`status-badge ${project.project_url === "*" ? 'status-development' : 'status-production'}`}>
+                {project.project_url === "*" ? 'Development' : 'Production'}
+              </div>
             </div>
           </div>
           
-          {/* Project details section */}
+          {/* Project info section */}
           <div className="p-3 sm:p-6 glass-card rounded-xl mb-4 sm:mb-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
               <h3 className="card-header text-lg sm:text-xl mb-0">Project Details</h3>
-              {!isEditingUrl ? (
-                <button 
-                  onClick={() => setIsEditingUrl(true)}
-                  className="btn-gradient px-3 py-2 sm:px-4 sm:py-2 text-sm sm:text-base self-start sm:self-auto"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 inline" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                  </svg>
-                  Edit URL
-                </button>
-              ) : (
+              {isEditingUrl && (
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <button 
                     onClick={handleSaveProjectUrl}
@@ -381,54 +379,113 @@ export default function ProjectDetail() {
                 </div>
               )}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-3">
-                {/* ID du projet supprimé pour l'interface publique */}
-                {project.creation_timestamp && (
-                  <div>
-                    <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
-                    <span className="text-sm sm:text-base">{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
-                  </div>
-                )}
+            <div className="space-y-3">
+              {project.creation_timestamp && (
                 <div>
-                  <span className="text-sm font-semibold text-muted block mb-1">Project URL</span>
+                  <span className="text-sm font-semibold text-muted block mb-1">Creation Date</span>
+                  <span className="text-sm sm:text-base">{format(new Date(project.creation_timestamp), 'MM/dd/yyyy')}</span>
+                </div>
+              )}
+              <div>
+                <div 
+                  className={`cursor-pointer p-2 rounded-lg transition-colors ${!isEditingUrl ? 'hover:bg-card-hover border border-transparent hover:border-card-border' : ''}`}
+                  onClick={() => !isEditingUrl && setIsEditingUrl(true)}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-semibold text-muted block mb-1">Environment Mode</span>
+                    {!isEditingUrl && (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                      </svg>
+                    )}
+                  </div>
                   {isEditingUrl ? (
-                    <div className="space-y-2">
-                      <input
-                        type="url"
-                        value={editedProjectUrl}
-                        onChange={(e) => setEditedProjectUrl(e.target.value)}
-                        className="input-field w-full"
-                        placeholder="https://example.com"
-                      />
-                      <p className="text-xs text-muted">
-                        This URL will be allowed for CORS requests to your Edge Function.
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer p-3 rounded-lg border border-card-border hover:bg-card-hover transition-colors">
+                          <input
+                            type="radio"
+                            name="mode"
+                            value="*"
+                            checked={editedProjectUrl === "*"}
+                            onChange={(e) => setEditedProjectUrl(e.target.value)}
+                            className="text-primary focus:ring-primary"
+                          />
+                          <div className="flex-1">
+                            <div className="font-medium text-sm">Development</div>
+                            <div className="text-xs text-muted">Accepts requests from any origin (*)</div>
+                          </div>
+                          <span className="px-2 py-1 rounded-full text-xs bg-yellow-500/20 text-yellow-600">DEV</span>
+                        </label>
+                        <label className="flex items-start gap-2 cursor-pointer p-3 rounded-lg border border-card-border hover:bg-card-hover transition-colors">
+                          <input
+                            type="radio"
+                            name="mode"
+                            value="custom"
+                            checked={editedProjectUrl !== "*"}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditedProjectUrl(project?.project_url === "*" ? "" : project?.project_url || "");
+                              }
+                            }}
+                            className="text-primary focus:ring-primary mt-0.5"
+                          />
+                          <div className="flex-1 space-y-2">
+                            <div>
+                              <div className="font-medium text-sm">Production</div>
+                              <div className="text-xs text-muted">Specify your domain for CORS security</div>
+                            </div>
+                            {editedProjectUrl !== "*" && (
+                              <input
+                                type="url"
+                                value={editedProjectUrl}
+                                onChange={(e) => setEditedProjectUrl(e.target.value)}
+                                className="input-field w-full text-sm"
+                                placeholder="https://yourdomain.com"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            )}
+                          </div>
+                          <span className="px-2 py-1 rounded-full text-xs bg-green-500/20 text-green-600">PROD</span>
+                        </label>
+                      </div>
+                      <p className="text-xs text-muted bg-blue-50 dark:bg-blue-900/20 p-2 rounded border-l-4 border-blue-500">
+                        💡 <strong>Development Mode:</strong> Perfect for testing. Your API accepts requests from any domain.<br/>
+                        🔒 <strong>Production Mode:</strong> Secure your API by only allowing requests from your specified domain.
                       </p>
                     </div>
                   ) : (
-                    <>
-                      {project.project_url ? (
-                        <a 
-                          href={project.project_url} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-primary underline hover:text-primary-light break-all transition-colors text-sm sm:text-base"
-                        >
-                          {project.project_url}
-                        </a>
-                      ) : (
-                        <span className="text-muted text-sm sm:text-base">No URL provided</span>
-                      )}
-                    </>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {project.project_url === "*" ? (
+                          <>
+                            <span className="px-3 py-1 rounded-full text-sm bg-yellow-500/20 text-yellow-600 font-medium">Development</span>
+                            <span className="text-sm text-muted">Accepts requests from all origins (*)</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="px-3 py-1 rounded-full text-sm bg-green-500/20 text-green-600 font-medium">Production</span>
+                            <span className="text-sm text-muted">URL :</span>
+                            <a 
+                              href={project.project_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-primary underline hover:text-primary-light break-all transition-colors text-sm"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {project.project_url}
+                            </a>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted">
+                        {project.project_url === "*" 
+                          ? "Your API accepts requests from any domain. Click to switch to production mode."
+                          : "Your API only accepts requests from the specified domain for enhanced security."
+                        }
+                      </p>
+                    </div>
                   )}
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm font-semibold text-muted block mb-1">Status</span>
-                  <span className={`status-badge ${project.working ? 'status-active' : 'status-inactive'}`}>
-                    {project.working ? 'Active' : 'Inactive'}
-                  </span>
                 </div>
               </div>
             </div>
