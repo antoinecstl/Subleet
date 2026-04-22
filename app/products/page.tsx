@@ -59,7 +59,7 @@ export default function ProductsPage() {
                   }}>{t}</span>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <a href="https://fi-hub.subleet.com" target="_blank" rel="noopener noreferrer" style={{
                   background: '#3d3028', border: 'none', borderRadius: 8,
                   padding: '12px 24px', color: '#f0ebe4',
@@ -67,6 +67,12 @@ export default function ProductsPage() {
                   fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
                   boxShadow: '0 4px 16px rgba(61,48,40,0.15)',
                 }}>Accéder à fi-hub →</a>
+                <a href="/contact?subject=fihub" style={{
+                  background: 'transparent', border: '1px solid rgba(61,48,40,0.15)',
+                  borderRadius: 8, padding: '12px 20px', color: 'rgba(61,48,40,0.7)',
+                  fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
+                }}>Nous contacter</a>
               </div>
             </div>
 
