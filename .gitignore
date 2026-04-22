@@ -1,2 +1,4 @@
-//ignorer les .env
 .env*
+.next/
+node_modules/
+out/
