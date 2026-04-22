@@ -9,6 +9,8 @@ const SUBJECT_LABELS: Record<string, string> = {
   autre: 'Autre',
 }
 
+const DEFAULT_FROM = 'Subleet Contact <no-reply@contact.subleet.com>'
+
 export async function POST(req: Request) {
   try {
     const { name, email, phone, subject, message } = await req.json()
@@ -25,9 +27,10 @@ export async function POST(req: Request) {
 
     const resend = new Resend(apiKey)
     const subjectLabel = SUBJECT_LABELS[subject] || 'Demande générale'
+    const from = process.env.RESEND_FROM_EMAIL || DEFAULT_FROM
 
     await resend.emails.send({
-      from: 'Subleet Contact <contact@subleet.com>',
+      from,
       to: ['antoinecstl@gmail.com'],
       replyTo: email,
       subject: `[Subleet] ${subjectLabel} — ${name}`,
