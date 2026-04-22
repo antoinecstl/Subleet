@@ -4,11 +4,18 @@ import { useState } from 'react'
 
 const ACCENT = '#f59e0b'
 
-type FormState = { name: string; email: string; subject: string; message: string }
+type FormState = {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  subject: string
+  message: string
+}
 type Status = 'idle' | 'sending' | 'success' | 'error'
 
 export default function ContactPage() {
-  const [form, setForm] = useState<FormState>({ name: '', email: '', subject: '', message: '' })
+  const [form, setForm] = useState<FormState>({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' })
   const [status, setStatus] = useState<Status>('idle')
   const [focused, setFocused] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -27,15 +34,22 @@ export default function ContactPage() {
     setStatus('sending')
     setErrorMsg('')
     try {
+      const name = `${form.firstName} ${form.lastName}`.trim()
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name,
+          email: form.email,
+          phone: form.phone,
+          subject: form.subject,
+          message: form.message,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erreur inconnue')
       setStatus('success')
-      setForm({ name: '', email: '', subject: '', message: '' })
+      setForm({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' })
     } catch (err: unknown) {
       setStatus('error')
       setErrorMsg(err instanceof Error ? err.message : 'Une erreur est survenue.')
@@ -102,14 +116,24 @@ export default function ContactPage() {
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                  <input placeholder="Nom *" required value={form.name}
-                    onChange={e => setForm({ ...form, name: e.target.value })}
-                    onFocus={() => setFocused('name')} onBlur={() => setFocused(null)}
-                    style={inputStyle('name')} />
-                  <input placeholder="Email *" type="email" required value={form.email}
+                  <input placeholder="Nom *" required value={form.lastName}
+                    onChange={e => setForm({ ...form, lastName: e.target.value })}
+                    onFocus={() => setFocused('lastName')} onBlur={() => setFocused(null)}
+                    style={inputStyle('lastName')} />
+                  <input placeholder="Prénom *" required value={form.firstName}
+                    onChange={e => setForm({ ...form, firstName: e.target.value })}
+                    onFocus={() => setFocused('firstName')} onBlur={() => setFocused(null)}
+                    style={inputStyle('firstName')} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <input placeholder="E-mail *" type="email" required value={form.email}
                     onChange={e => setForm({ ...form, email: e.target.value })}
                     onFocus={() => setFocused('email')} onBlur={() => setFocused(null)}
                     style={inputStyle('email')} />
+                  <input placeholder="Téléphone *" type="tel" required value={form.phone}
+                    onChange={e => setForm({ ...form, phone: e.target.value })}
+                    onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)}
+                    style={inputStyle('phone')} />
                 </div>
                 <select value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })}
                   onFocus={() => setFocused('subject')} onBlur={() => setFocused(null)}

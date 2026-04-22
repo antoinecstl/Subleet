@@ -11,16 +11,15 @@ const SUBJECT_LABELS: Record<string, string> = {
 
 export async function POST(req: Request) {
   try {
-    const { name, email, subject, message } = await req.json()
+    const { name, email, phone, subject, message } = await req.json()
 
-    if (!name || !email || !message) {
+    if (!name || !email || !phone || !message) {
       return NextResponse.json({ error: 'Champs manquants.' }, { status: 400 })
     }
 
     const apiKey = process.env.RESEND_API_KEY
     if (!apiKey) {
       // No API key configured — log and return success so UX isn't broken
-      console.log('[Contact form] No RESEND_API_KEY — message not sent:', { name, email, subject, message })
       return NextResponse.json({ success: true })
     }
 
@@ -39,6 +38,7 @@ export async function POST(req: Request) {
           <table style="width: 100%; border-collapse: collapse;">
             <tr><td style="padding: 10px 0; color: #6b5344; font-size: 13px; width: 120px;">Nom</td><td style="padding: 10px 0; color: #3d3028; font-weight: 600;">${name}</td></tr>
             <tr><td style="padding: 10px 0; color: #6b5344; font-size: 13px;">Email</td><td style="padding: 10px 0;"><a href="mailto:${email}" style="color: #f59e0b;">${email}</a></td></tr>
+            <tr><td style="padding: 10px 0; color: #6b5344; font-size: 13px;">Téléphone</td><td style="padding: 10px 0; color: #3d3028; font-weight: 600;">${phone}</td></tr>
           </table>
           <div style="margin-top: 24px; padding: 20px; background: #fff; border-radius: 8px; border-left: 4px solid #f59e0b;">
             <p style="color: #3d3028; line-height: 1.7; margin: 0; white-space: pre-wrap;">${message}</p>
