@@ -9,7 +9,8 @@ const SUBJECT_LABELS: Record<string, string> = {
   autre: 'Autre',
 }
 
-const CONTACT_EMAIL = 'no-reply@contact.subleet.com'
+
+
 
 export async function POST(req: Request) {
   try {
@@ -27,10 +28,12 @@ export async function POST(req: Request) {
 
     const resend = new Resend(apiKey)
     const subjectLabel = SUBJECT_LABELS[subject] || 'Demande générale'
+    const fromEmail = 'contactform@contact.subleet.com'
+    const toEmail = 'subleet@outlook.com'
 
-    await resend.emails.send({
-      from: `Subleet Contact Form<${CONTACT_EMAIL}>`,
-      to: [CONTACT_EMAIL],
+    const { data, error } = await resend.emails.send({
+      from: `Subleet Contact Form <${fromEmail}>`,
+      to: [toEmail],
       subject: `[Subleet] ${subjectLabel} — ${name}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 32px; background: #f9f6f2; border-radius: 12px;">
@@ -48,6 +51,13 @@ export async function POST(req: Request) {
         </div>
       `,
     })
+
+    if (error) {
+      console.error('[Contact form] Resend error:', error)
+      return NextResponse.json({ error: 'Erreur email. Veuillez réessayer.' }, { status: 502 })
+    }
+
+    console.log('[Contact form] Email sent:', { id: data?.id, fromEmail, toEmail })
 
     return NextResponse.json({ success: true })
   } catch (err) {
