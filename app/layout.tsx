@@ -30,9 +30,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${poppins.variable} ${dmSans.variable}`}>
-      <body>
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Navbar />
-        {children}
+        <main style={{ flex: 1 }}>
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

@@ -63,9 +63,14 @@ export default function Footer() {
         <div style={{ borderTop: '1px solid rgba(61,48,40,0.08)', paddingTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.35)' }}>© 2026 Subleet. Tous droits réservés.</span>
           <div style={{ display: 'flex', gap: 24 }}>
-            {['Mentions légales', 'Politique de confidentialité'].map(t => (
-              <span key={t} style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.35)', cursor: 'pointer' }}>{t}</span>
-            ))}
+            <Link href="/mentions-legales" style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.35)', textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(61,48,40,0.6)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(61,48,40,0.35)')}
+            >Mentions légales</Link>
+            <Link href="/confidentialite" style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.35)', textDecoration: 'none', transition: 'color 0.2s' }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(61,48,40,0.6)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(61,48,40,0.35)')}
+            >Politique de confidentialité</Link>
           </div>
         </div>
       </div>

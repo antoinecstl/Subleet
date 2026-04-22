@@ -60,7 +60,7 @@ export default function ContactPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
               {[
                 { label: 'Email', value: 'contact@subleet.com', icon: '✉', href: 'mailto:contact@subleet.com' },
-                { label: 'Basé à', value: 'France', icon: '◎', href: null },
+                { label: 'Basé en', value: 'France', icon: '◎', href: null },
                 { label: 'Réponse sous', value: '24 heures', icon: '◷', href: null },
               ].map(c => (
                 <div key={c.label} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

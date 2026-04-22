@@ -15,7 +15,7 @@ export default function HeroSection() {
       position: 'relative', overflow: 'hidden',
       padding: '120px clamp(20px, 5vw, 80px) 80px',
     }}>
-      {/* Gradient orbs — clipped by section overflow:hidden */}
+      {/* Gradient orbs */}
       <div style={{
         position: 'absolute', top: '-20%', right: '-10%', width: 600, height: 600,
         background: `radial-gradient(circle, ${ACCENT}12 0%, transparent 70%)`,
@@ -105,33 +105,46 @@ export default function HeroSection() {
             borderRadius: 20, padding: 28, position: 'relative',
             boxShadow: '0 24px 80px rgba(61,48,40,0.15)',
           }}>
-            {/* Card header */}
+            {/* Card header — logo + name */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 10, background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+                background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}88)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
                 <span style={{ color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-poppins), sans-serif' }}>f</span>
               </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 15, color: '#f0ebe4' }}>fi-hub</div>
                 <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>Wealth Tracking</div>
               </div>
-              <span style={{ marginLeft: 'auto', background: 'rgba(74,222,128,0.12)', color: '#4ade80', fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 6, fontFamily: 'var(--font-dm-sans), sans-serif' }}>+12,4 %</span>
             </div>
 
-            {/* Chart */}
-            <svg viewBox="0 0 300 70" style={{ width: '100%', height: 70, marginBottom: 16 }}>
+            {/* Chart — overflow:visible so the stroke tip isn't clipped */}
+            <svg
+              viewBox="0 -6 300 76"
+              style={{ width: '100%', height: 70, marginBottom: 16, overflow: 'visible' }}
+            >
               <defs>
                 <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={ACCENT} stopOpacity="0.3" />
+                  <stop offset="0%" stopColor={ACCENT} stopOpacity="0.35" />
                   <stop offset="100%" stopColor={ACCENT} stopOpacity="0" />
                 </linearGradient>
               </defs>
-              <path d="M0,55 Q30,50 60,44 T120,30 T180,35 T240,16 T300,6" fill="none" stroke={ACCENT} strokeWidth="2" />
-              <path d="M0,55 Q30,50 60,44 T120,30 T180,35 T240,16 T300,6 L300,70 L0,70Z" fill="url(#chartGrad)" />
+              {/* Path stays inside the original coords; viewBox extended upward by 6 */}
+              <path d="M0,55 Q30,48 60,42 T120,28 T180,32 T240,14 T300,4"
+                fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" />
+              <path d="M0,55 Q30,48 60,42 T120,28 T180,32 T240,14 T300,4 L300,70 L0,70Z"
+                fill="url(#chartGrad)" />
             </svg>
 
             {/* Account tiles */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              {[{ label: 'PEA', val: '24 350 €' }, { label: 'CTO', val: '18 720 €' }, { label: 'AV', val: '42 100 €' }].map(s => (
+              {[
+                { label: 'PEA', val: '24 350 €' },
+                { label: 'CTO', val: '18 720 €' },
+                { label: 'AV', val: '42 100 €' },
+              ].map(s => (
                 <div key={s.label} style={{ background: 'rgba(240,235,228,0.05)', borderRadius: 10, padding: '10px 12px' }}>
                   <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 10, color: 'rgba(240,235,228,0.4)', marginBottom: 4 }}>{s.label}</div>
                   <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 14, fontWeight: 700, color: '#f0ebe4' }}>{s.val}</div>
@@ -139,17 +152,26 @@ export default function HeroSection() {
               ))}
             </div>
 
-            {/* Floating total badge */}
+            {/* Floating total badge — top-right */}
             <div className="hero-float-badge" style={{
               position: 'absolute', top: -16, right: -16, background: '#3a2e22',
               border: '1px solid rgba(240,235,228,0.08)', borderRadius: 12, padding: '10px 16px',
-              boxShadow: '0 8px 32px rgba(61,48,40,0.25)',
+              boxShadow: '0 8px 32px rgba(61,48,40,0.3)',
             }}>
-              <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>Portefeuille total</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
+                <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>Portefeuille total</div>
+              </div>
               <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 20, fontWeight: 800, color: '#f0ebe4' }}>85 170 €</div>
+              <span style={{
+                  background: 'rgba(74,222,128,0.15)', color: '#4ade80',
+                  fontSize: 14, fontWeight: 700, padding: '3px 8px', borderRadius: 10,
+                  fontFamily: 'var(--font-dm-sans), sans-serif', letterSpacing: '0.03em',
+                  display: 'block', width: 'fit-content', margin: '1px auto 0',
+                }}>+12,4 %</span>
             </div>
           </div>
         </div>
+
       </div>
     </section>
   )
