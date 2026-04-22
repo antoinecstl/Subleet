@@ -2,8 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog-posts'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 export function generateStaticParams() {
   return BLOG_POSTS.map(p => ({ slug: p.slug }))
@@ -13,7 +12,26 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const post = getPostBySlug(slug)
   if (!post) return {}
-  return { title: `${post.title} — Subleet`, description: post.excerpt }
+  const url = `https://subleet.com/blog/${post.slug}`
+  return {
+    title: post.title,
+    description: post.excerpt,
+
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'article',
+      url,
+      title: post.title,
+      description: post.excerpt,
+      siteName: 'Subleet',
+      locale: 'fr_FR',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.title,
+      description: post.excerpt,
+    },
+  }
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {

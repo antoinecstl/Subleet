@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
+import { ACCENT } from '@/lib/theme'
 
 const NAV_LINKS = [
   { label: 'Accueil', href: '/' },
@@ -11,8 +12,6 @@ const NAV_LINKS = [
   { label: 'Blog', href: '/blog' },
   { label: 'Contact', href: '/contact' },
 ]
-
-const ACCENT = '#f59e0b'
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)

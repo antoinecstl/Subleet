@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { ACCENT } from '@/lib/theme'
 
 export const metadata: Metadata = {
-  title: 'Mentions légales — Subleet',
+  title: 'Mentions légales',
 }
-
-const ACCENT = '#f59e0b'
 
 const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
   <div style={{ marginBottom: 40 }}>

@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 type FormState = {
   firstName: string
@@ -11,11 +10,12 @@ type FormState = {
   phone: string
   subject: string
   message: string
+  website: string
 }
 type Status = 'idle' | 'sending' | 'success' | 'error'
 
 export default function ContactPage() {
-  const [form, setForm] = useState<FormState>({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' })
+  const [form, setForm] = useState<FormState>({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '', website: '' })
   const [status, setStatus] = useState<Status>('idle')
   const [focused, setFocused] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -44,12 +44,13 @@ export default function ContactPage() {
           phone: form.phone,
           subject: form.subject,
           message: form.message,
+          website: form.website,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Erreur inconnue')
       setStatus('success')
-      setForm({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '' })
+      setForm({ firstName: '', lastName: '', email: '', phone: '', subject: '', message: '', website: '' })
     } catch (err: unknown) {
       setStatus('error')
       setErrorMsg(err instanceof Error ? err.message : 'Une erreur est survenue.')
@@ -115,6 +116,17 @@ export default function ContactPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {/* Honeypot — hidden from humans, bots fill it */}
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={form.website}
+                  onChange={e => setForm({ ...form, website: e.target.value })}
+                  style={{ position: 'absolute', left: '-10000px', width: 1, height: 1, opacity: 0 }}
+                  aria-hidden="true"
+                />
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                   <input placeholder="Nom *" required value={form.lastName}
                     onChange={e => setForm({ ...form, lastName: e.target.value })}

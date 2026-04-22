@@ -2,8 +2,7 @@
 
 import Link from 'next/link'
 import AnimatedSection from './AnimatedSection'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 export default function ProductHighlight() {
   return (

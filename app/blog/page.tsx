@@ -4,8 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { BLOG_POSTS } from '@/lib/blog-posts'
 import type { BlogPost } from '@/lib/blog-posts'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 function BlogCard({ post }: { post: BlogPost }) {
   const [hovered, setHovered] = useState(false)

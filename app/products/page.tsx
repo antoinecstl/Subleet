@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
+import { ACCENT } from '@/lib/theme'
 
 export const metadata: Metadata = {
-  title: 'Produits — Subleet',
+  title: 'Produits',
   description: 'Découvrez l\'écosystème Subleet : fi-hub et nos futurs produits.',
 }
-
-const ACCENT = '#f59e0b'
 
 const TAGS = ['Temps réel', 'Multi-comptes', 'Analyse performance', 'Allocation', 'Sécurisé']
 

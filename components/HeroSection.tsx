@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 export default function HeroSection() {
   const [visible, setVisible] = useState(false)

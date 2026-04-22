@@ -3,8 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import AnimatedSection from './AnimatedSection'
-
-const ACCENT = '#f59e0b'
+import { ACCENT } from '@/lib/theme'
 
 const SERVICES = [
   { icon: '◆', title: 'Produits SaaS', desc: 'Nous concevons et opérons des plateformes SaaS innovantes pour des marchés à fort potentiel.', action: 'Voir fi-hub', href: '/products' },
