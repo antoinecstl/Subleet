@@ -25,7 +25,7 @@ export default function MentionsLegalesPage() {
 
         <Section title="Éditeur du site">
           <p>Le site <strong>subleet.com</strong> est édité par Subleet, entreprise individuelle.</p>
-          <p style={{ marginTop: 12 }}>Responsable de la publication : Antoine Castellon</p>
+          <p style={{ marginTop: 12 }}>Responsable de la publication : Antoine Castel</p>
           <p>Contact : <a href="mailto:contact@subleet.com" style={{ color: ACCENT, textDecoration: 'none' }}>contact@subleet.com</a></p>
         </Section>
 

@@ -31,7 +31,7 @@ export default function ConfidentialitePage() {
         <h1 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800, fontSize: 'clamp(28px, 4vw, 42px)', color: '#3d3028', letterSpacing: '-0.03em', marginTop: 12, marginBottom: 48 }}>Politique de confidentialité</h1>
 
         <Section title="Responsable du traitement">
-          <p>Subleet, représentée par Antoine Castellon, est responsable du traitement des données personnelles collectées via le site <strong>subleet.com</strong>.</p>
+          <p>Subleet, représentée par Antoine Castel, est responsable du traitement des données personnelles collectées via le site <strong>subleet.com</strong>.</p>
           <p style={{ marginTop: 12 }}>Contact DPO : <a href="mailto:contact@subleet.com" style={{ color: ACCENT, textDecoration: 'none' }}>contact@subleet.com</a></p>
         </Section>
 
