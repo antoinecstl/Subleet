@@ -2,10 +2,9 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { BLOG_POSTS, getPostBySlug } from '@/lib/blog-posts'
-import { ACCENT } from '@/lib/theme'
 
 export function generateStaticParams() {
-  return BLOG_POSTS.map(p => ({ slug: p.slug }))
+  return BLOG_POSTS.map(post => ({ slug: post.slug }))
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -13,10 +12,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const post = getPostBySlug(slug)
   if (!post) return {}
   const url = `https://subleet.com/blog/${post.slug}`
+
   return {
     title: post.title,
     description: post.excerpt,
-
     alternates: { canonical: url },
     openGraph: {
       type: 'article',
@@ -41,111 +40,201 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <div style={{ paddingTop: 72 }}>
-      {/* Header */}
-      <section style={{ padding: '72px clamp(20px, 5vw, 80px) 0', maxWidth: 760, margin: '0 auto' }}>
-        <Link href="/blog" style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 14, color: 'rgba(61,48,40,0.5)',
-          textDecoration: 'none', marginBottom: 40, transition: 'color 0.2s',
-        }}>
-          ← Retour au blog
-        </Link>
+      <section style={{ padding: 'clamp(76px, 12vh, 130px) clamp(20px, 4vw, 56px) 56px' }}>
+        <div style={{ maxWidth: 980, margin: '0 auto' }}>
+          <Link
+            href="/blog"
+            className="draw-link mono"
+            style={{
+              display: 'inline-block',
+              fontSize: 11,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              color: 'var(--ink-muted)',
+              marginBottom: 46,
+            }}
+          >
+            ← Retour au blog
+          </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-          <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 12, fontWeight: 600, color: ACCENT, background: ACCENT + '15', padding: '4px 12px', borderRadius: 6 }}>{post.cat}</span>
-          <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.45)' }}>{post.date}</span>
-          <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.25)' }}>·</span>
-          <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.45)' }}>{post.readTime} de lecture</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 22, flexWrap: 'wrap' }}>
+            <span className="eyebrow eyebrow-ember">{post.cat}</span>
+            <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--ink-muted)' }}>
+              {post.date} · {post.readTime}
+            </span>
+          </div>
+
+          <h1
+            className="display"
+            style={{
+              fontSize: 'clamp(48px, 7.4vw, 104px)',
+              fontWeight: 500,
+              lineHeight: 0.94,
+              color: 'var(--ink)',
+              letterSpacing: '-0.04em',
+              marginBottom: 34,
+            }}
+          >
+            {post.title}
+          </h1>
+
+          <p
+            style={{
+              fontSize: 'clamp(18px, 1.8vw, 23px)',
+              lineHeight: 1.65,
+              color: 'var(--ink-soft)',
+              borderLeft: '4px solid var(--ember)',
+              paddingLeft: 24,
+              maxWidth: 820,
+            }}
+          >
+            {post.excerpt}
+          </p>
         </div>
-
-        <h1 style={{
-          fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800,
-          fontSize: 'clamp(26px, 4vw, 44px)', lineHeight: 1.15, color: '#3d3028',
-          letterSpacing: '-0.025em', marginBottom: 24,
-        }}>{post.title}</h1>
-
-        <p style={{
-          fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 18, lineHeight: 1.75,
-          color: 'rgba(61,48,40,0.65)', borderLeft: `3px solid ${ACCENT}`,
-          paddingLeft: 20, marginBottom: 56,
-        }}>{post.excerpt}</p>
       </section>
 
-      {/* Article body */}
-      <article style={{ padding: '0 clamp(20px, 5vw, 80px) 120px', maxWidth: 760, margin: '0 auto' }}>
-        {post.content.map((section, i) => {
-          if (section.type === 'intro') {
-            return (
-              <p key={i} style={{
-                fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 17, lineHeight: 1.85,
-                color: 'rgba(61,48,40,0.75)', marginBottom: 36, fontWeight: 500,
-              }}>{section.text}</p>
-            )
-          }
-          if (section.type === 'h2') {
-            return (
-              <h2 key={i} style={{
-                fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700,
-                fontSize: 'clamp(20px, 2.5vw, 26px)', color: '#3d3028',
-                letterSpacing: '-0.02em', marginTop: 52, marginBottom: 16, lineHeight: 1.3,
-              }}>{section.text}</h2>
-            )
-          }
-          if (section.type === 'p') {
-            return (
-              <p key={i} style={{
-                fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 16, lineHeight: 1.85,
-                color: 'rgba(61,48,40,0.7)', marginBottom: 24,
-              }}>{section.text}</p>
-            )
-          }
-          if (section.type === 'ul') {
-            return (
-              <ul key={i} style={{ margin: '0 0 28px 0', paddingLeft: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {section.items?.map((item, j) => (
-                  <li key={j} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: ACCENT, marginTop: 9, flexShrink: 0 }} />
-                    <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 16, lineHeight: 1.75, color: 'rgba(61,48,40,0.7)' }}>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            )
-          }
-          if (section.type === 'quote') {
-            return (
-              <blockquote key={i} style={{
-                background: `${ACCENT}08`, border: `1px solid ${ACCENT}20`,
-                borderLeft: `4px solid ${ACCENT}`, borderRadius: '0 12px 12px 0',
-                padding: '20px 24px', margin: '36px 0',
-              }}>
-                <p style={{
-                  fontFamily: 'var(--font-poppins), sans-serif', fontSize: 17, fontWeight: 600,
-                  color: '#3d3028', lineHeight: 1.6, fontStyle: 'italic', margin: 0,
-                }}>{section.text}</p>
-              </blockquote>
-            )
-          }
-          return null
-        })}
+      <article style={{ padding: '0 clamp(20px, 4vw, 56px) clamp(88px, 12vh, 150px)' }}>
+        <div
+          style={{
+            maxWidth: 860,
+            margin: '0 auto',
+            background: 'rgba(230,214,189,0.42)',
+            borderTop: '1px solid var(--ink)',
+            borderBottom: '1px solid var(--ink)',
+            padding: 'clamp(36px, 5vw, 64px) 0',
+          }}
+        >
+          <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 clamp(20px, 4vw, 42px)' }}>
+            {post.content.map((section, index) => {
+              if (section.type === 'intro') {
+                return (
+                  <p
+                    key={index}
+                    style={{
+                      fontSize: 18,
+                      lineHeight: 1.85,
+                      color: 'var(--ink)',
+                      marginBottom: 38,
+                      fontWeight: 500,
+                    }}
+                  >
+                    {section.text}
+                  </p>
+                )
+              }
 
-        {/* CTA footer */}
-        <div style={{
-          marginTop: 64, padding: 40, background: '#2c2218', borderRadius: 20,
-          border: '1px solid rgba(240,235,228,0.06)', textAlign: 'center',
-        }}>
-          <h3 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 22, color: '#f0ebe4', marginBottom: 12 }}>
-            Un projet en tête ?
-          </h3>
-          <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 15, color: 'rgba(240,235,228,0.55)', marginBottom: 28 }}>
-            Discutons de votre situation et de la façon dont nous pouvons vous aider.
-          </p>
-          <Link href="/contact" style={{
-            background: ACCENT, borderRadius: 10, padding: '12px 28px',
-            color: '#fff', fontFamily: 'var(--font-dm-sans), sans-serif',
-            fontSize: 15, fontWeight: 600, textDecoration: 'none', display: 'inline-block',
-          }}>Nous contacter →</Link>
+              if (section.type === 'h2') {
+                return (
+                  <h2
+                    key={index}
+                    className="display"
+                    style={{
+                      fontSize: 'clamp(32px, 4vw, 52px)',
+                      fontWeight: 600,
+                      color: 'var(--ink)',
+                      letterSpacing: '-0.03em',
+                      marginTop: 58,
+                      marginBottom: 18,
+                    }}
+                  >
+                    {section.text}
+                  </h2>
+                )
+              }
+
+              if (section.type === 'p') {
+                return (
+                  <p
+                    key={index}
+                    style={{
+                      fontSize: 16,
+                      lineHeight: 1.9,
+                      color: 'var(--ink-soft)',
+                      marginBottom: 26,
+                    }}
+                  >
+                    {section.text}
+                  </p>
+                )
+              }
+
+              if (section.type === 'ul') {
+                return (
+                  <ul key={index} style={{ margin: '0 0 32px 0', paddingLeft: 0, listStyle: 'none', display: 'grid', gap: 14 }}>
+                    {section.items?.map((item, itemIndex) => (
+                      <li
+                        key={itemIndex}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '18px 1fr',
+                          gap: 12,
+                          alignItems: 'start',
+                        }}
+                      >
+                        <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--ember)', marginTop: 11 }} />
+                        <span style={{ fontSize: 16, lineHeight: 1.8, color: 'var(--ink-soft)' }}>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              }
+
+              if (section.type === 'quote') {
+                return (
+                  <blockquote
+                    key={index}
+                    style={{
+                      borderLeft: '4px solid var(--ember)',
+                      padding: '8px 0 8px 24px',
+                      margin: '42px 0',
+                    }}
+                  >
+                    <p
+                      className="display-italic"
+                      style={{
+                        fontSize: 'clamp(25px, 3vw, 36px)',
+                        color: 'var(--ink)',
+                        lineHeight: 1.2,
+                        fontWeight: 400,
+                      }}
+                    >
+                      {section.text}
+                    </p>
+                  </blockquote>
+                )
+              }
+
+              return null
+            })}
+
+            <div
+              style={{
+                marginTop: 68,
+                paddingTop: 34,
+                borderTop: '1px solid var(--ink-faint)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 20,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div>
+                <div className="eyebrow eyebrow-ember" style={{ marginBottom: 8 }}>
+                  Subleet
+                </div>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7 }}>
+                  Un projet produit, web ou IA à cadrer ?
+                </p>
+              </div>
+              <Link href="/contact" className="btn-stamp">
+                Nous contacter →
+              </Link>
+            </div>
+          </div>
         </div>
       </article>
     </div>
   )
 }
+

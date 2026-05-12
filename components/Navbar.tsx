@@ -1,16 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import Image from 'next/image'
-import { ACCENT } from '@/lib/theme'
 
 const NAV_LINKS = [
-  { label: 'Accueil', href: '/' },
-  { label: 'Produits', href: '/products' },
-  { label: 'Blog', href: '/blog' },
-  { label: 'Contact', href: '/contact' },
+  { label: 'Index', href: '/', no: '00' },
+  { label: 'Produits', href: '/products', no: '01' },
+  { label: 'Blog', href: '/blog', no: '02' },
+  { label: 'Contact', href: '/contact', no: '03' },
 ]
 
 export default function Navbar() {
@@ -19,102 +17,174 @@ export default function Navbar() {
   const pathname = usePathname()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', onScroll)
+    const onScroll = () => setScrolled(window.scrollY > 24)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
-      background: scrolled ? 'rgba(234,226,216,0.9)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(20px) saturate(1.4)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(61,48,40,0.08)' : '1px solid transparent',
-      transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
-      padding: '0 clamp(24px, 5vw, 80px)',
-    }}>
+    <nav
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        background: scrolled ? 'rgba(236, 223, 203, 0.88)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(14px) saturate(1.1)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(14px) saturate(1.1)' : 'none',
+        borderBottom: scrolled ? '1px solid var(--ink-faint)' : '1px solid transparent',
+        transition: 'background 0.4s ease, border-color 0.4s ease, backdrop-filter 0.4s ease',
+      }}
+    >
       <div style={{
-        maxWidth: 1280, margin: '0 auto',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: 72,
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <Image src="/assets/logo.png" alt="Subleet" width={32} height={32} style={{ filter: 'brightness(0.2)' }} />
-          <span style={{
-            fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 22,
-            color: '#3d3028', letterSpacing: '-0.02em',
-          }}>Subleet</span>
+        height: 4,
+        borderTop: '1px solid var(--ink-faint)',
+        borderBottom: '1px solid var(--ink-faint)',
+      }} />
+
+      <div
+        style={{
+          maxWidth: 1440,
+          margin: '0 auto',
+          padding: '0 clamp(20px, 4vw, 56px)',
+          display: 'grid',
+          gridTemplateColumns: 'auto 1fr auto',
+          alignItems: 'center',
+          gap: 32,
+          height: 72,
+        }}
+      >
+        <Link href="/" style={{ display: 'flex', alignItems: 'baseline' }}>
+          <span
+            className="display"
+            style={{
+              fontWeight: 800,
+              fontSize: 28,
+              color: 'var(--ink)',
+              letterSpacing: '-0.04em',
+              lineHeight: 1,
+            }}
+          >
+            Subleet
+          </span>
         </Link>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 36 }} className="nav-desktop">
-          {NAV_LINKS.map(l => (
-            <Link key={l.href} href={l.href} style={{
-              fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 15, fontWeight: 500,
-              color: pathname === l.href ? ACCENT : 'rgba(61,48,40,0.6)',
-              transition: 'color 0.3s',
-              position: 'relative', padding: '4px 0',
-              textDecoration: 'none',
-            }}>
-              {l.label}
-              {pathname === l.href && (
-                <span style={{
-                  position: 'absolute', bottom: -2, left: 0, right: 0, height: 2,
-                  background: ACCENT, borderRadius: 1,
-                }} />
-              )}
-            </Link>
-          ))}
-          <Link href="/contact" style={{
-            background: '#3d3028', border: 'none', borderRadius: 8,
-            padding: '10px 22px', color: '#f0ebe4',
-            fontFamily: 'var(--font-dm-sans), sans-serif',
-            fontSize: 14, fontWeight: 600,
-            boxShadow: '0 2px 12px rgba(61,48,40,0.15)',
-            textDecoration: 'none',
-            transition: 'transform 0.2s, box-shadow 0.3s',
-            display: 'inline-block',
+        <div
+          className="nav-desktop-only"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: 40,
+            fontFamily: 'var(--font-mono), monospace',
+            fontSize: 12,
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
           }}
-          onMouseEnter={e => {
-            const el = e.currentTarget as HTMLElement
-            el.style.transform = 'translateY(-1px)'
-            el.style.boxShadow = '0 4px 20px rgba(61,48,40,0.25)'
-          }}
-          onMouseLeave={e => {
-            const el = e.currentTarget as HTMLElement
-            el.style.transform = ''
-            el.style.boxShadow = '0 2px 12px rgba(61,48,40,0.15)'
-          }}
-          >Nous contacter</Link>
+        >
+          {NAV_LINKS.map(l => {
+            const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="draw-link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'baseline',
+                  gap: 8,
+                  color: active ? 'var(--ember-hot)' : 'var(--ink)',
+                  fontWeight: 500,
+                }}
+              >
+                <span style={{ fontSize: 10, color: active ? 'var(--ember)' : 'var(--ink-muted)' }}>
+                  {l.no}
+                </span>
+                <span>{l.label}</span>
+              </Link>
+            )
+          })}
+        </div>
+
+        <div className="nav-desktop-only" style={{ display: 'flex', alignItems: 'center' }}>
+          <Link href="/contact" className="btn-stamp" style={{ padding: '12px 18px', fontSize: 11 }}>
+            Démarrer →
+          </Link>
         </div>
 
         <button
           className="nav-mobile-btn"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? 'Fermer' : 'Ouvrir le menu'}
+          onClick={() => setMobileOpen(o => !o)}
           style={{
-            display: 'none', background: 'none', border: 'none', cursor: 'pointer',
-            color: '#3d3028', fontSize: 28, padding: 4,
+            display: 'none',
+            gridColumn: 3,
+            background: 'transparent',
+            border: '1px solid var(--ink)',
+            color: 'var(--ink)',
+            fontFamily: 'var(--font-mono), monospace',
+            fontSize: 11,
+            textTransform: 'uppercase',
+            letterSpacing: '0.16em',
+            padding: '10px 14px',
+            borderRadius: 0,
           }}
         >
-          {mobileOpen ? '✕' : '☰'}
+          {mobileOpen ? 'Fermer' : 'Menu'}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="nav-mobile-menu" style={{
-          background: 'rgba(240,235,228,0.97)', backdropFilter: 'blur(20px)',
-          padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: 20,
-        }}>
-          {NAV_LINKS.map(l => (
-            <Link key={l.href} href={l.href} style={{
-              fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 18, fontWeight: 500,
-              color: pathname === l.href ? ACCENT : '#3d3028',
-              textDecoration: 'none',
-            }}>{l.label}</Link>
-          ))}
+        <div
+          className="nav-mobile-only"
+          style={{
+            background: 'var(--paper)',
+            borderTop: '1px solid var(--ink-faint)',
+            padding: '28px clamp(20px, 5vw, 56px) 40px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+          }}
+        >
+          {NAV_LINKS.map(l => {
+            const active = l.href === '/' ? pathname === '/' : pathname.startsWith(l.href)
+            return (
+              <Link
+                key={l.href}
+                href={l.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  justifyContent: 'space-between',
+                  padding: '18px 0',
+                  borderBottom: '1px solid var(--ink-faint)',
+                }}
+              >
+                <span
+                  className="display"
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 600,
+                    color: active ? 'var(--ember-hot)' : 'var(--ink)',
+                    fontStyle: active ? 'italic' : 'normal',
+                    letterSpacing: '-0.03em',
+                  }}
+                >
+                  {l.label}
+                </span>
+                <span className="mono" style={{ fontSize: 11, color: 'var(--ink-muted)' }}>{l.no}</span>
+              </Link>
+            )
+          })}
+          <Link href="/contact" className="btn-ember" style={{ marginTop: 28, alignSelf: 'flex-start' }}>
+            Démarrer une conversation
+          </Link>
         </div>
       )}
     </nav>
   )
 }
+

@@ -1,177 +1,239 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ACCENT } from '@/lib/theme'
 
 export default function HeroSection() {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { setTimeout(() => setVisible(true), 100) }, [])
-
   return (
-    <section style={{
-      minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden',
-      padding: '120px clamp(20px, 5vw, 80px) 80px',
-    }}>
-      {/* Gradient orbs */}
-      <div style={{
-        position: 'absolute', top: '-20%', right: '-10%', width: 600, height: 600,
-        background: `radial-gradient(circle, ${ACCENT}12 0%, transparent 70%)`,
-        borderRadius: '50%', filter: 'blur(80px)', pointerEvents: 'none',
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-10%', left: '-15%', width: 400, height: 400,
-        background: 'radial-gradient(circle, rgba(61,48,40,0.06) 0%, transparent 70%)',
-        borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none',
-      }} />
-      {/* Subtle grid */}
-      <div style={{
-        position: 'absolute', inset: 0, opacity: 0.04,
-        backgroundImage: 'linear-gradient(rgba(61,48,40,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(61,48,40,0.3) 1px, transparent 1px)',
-        backgroundSize: '60px 60px', pointerEvents: 'none',
-      }} />
+    <section
+      style={{
+        position: 'relative',
+        paddingTop: 'clamp(132px, 16vh, 190px)',
+        paddingBottom: 'clamp(72px, 10vh, 120px)',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute',
+          top: -120,
+          right: -140,
+          width: 520,
+          height: 520,
+          background: 'radial-gradient(circle, rgba(217,119,6,0.16) 0%, transparent 60%)',
+          filter: 'blur(20px)',
+          pointerEvents: 'none',
+        }}
+      />
 
-      <div style={{
-        maxWidth: 1280, margin: '0 auto', width: '100%',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80, alignItems: 'center',
-      }} className="hero-grid">
-
-        {/* Left — text */}
-        <div style={{
-          opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(30px)',
-          transition: 'all 0.8s cubic-bezier(0.22,1,0.36,1)',
-        }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            background: `${ACCENT}12`, border: `1px solid ${ACCENT}25`,
-            borderRadius: 100, padding: '6px 16px', marginBottom: 28,
-          }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: ACCENT, flexShrink: 0 }} />
-            <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, fontWeight: 500, color: '#8a6d3b' }}>
-              L'innovation tech, simplifiée
+      <div
+        style={{
+          maxWidth: 1440,
+          margin: '0 auto',
+          padding: '0 clamp(20px, 4vw, 56px)',
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) 340px',
+          gap: 'clamp(48px, 6vw, 88px)',
+          alignItems: 'end',
+        }}
+        className="grid-2"
+      >
+        <div>
+          <h1
+            className="display rise hero-headline"
+            style={{
+              fontSize: 'clamp(64px, 9.5vw, 156px)',
+              fontWeight: 500,
+              color: 'var(--ink)',
+              lineHeight: 0.92,
+              letterSpacing: '-0.035em',
+            }}
+          >
+            Nous bâtissons <br />
+            les outils que les{' '}
+            <span
+              className="display-italic"
+              style={{ color: 'var(--ember-hot)', fontWeight: 400 }}
+            >
+              autres
             </span>
-          </div>
-
-          <h1 style={{
-            fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800,
-            fontSize: 'clamp(34px, 5vw, 64px)', lineHeight: 1.08,
-            color: '#3d3028', letterSpacing: '-0.03em', marginBottom: 24,
-          }}>
-            Nous construisons les
-            <span style={{ color: ACCENT, display: 'block' }}>outils de demain</span>
+            <br />
+            n&apos;ont pas{' '}
+            <span
+              className="display-italic"
+              style={{ color: 'var(--ink)', fontWeight: 400 }}
+            >
+              encore
+            </span>{' '}
+            <span style={{ color: 'var(--ember)', fontWeight: 700 }}>écrits.</span>
           </h1>
 
-          <p style={{
-            fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 'clamp(16px, 1.8vw, 18px)', lineHeight: 1.7,
-            color: 'rgba(61,48,40,0.6)', maxWidth: 460, marginBottom: 40,
-          }}>
-            Subleet conçoit et opère des produits SaaS et des prestations digitales à forte valeur ajoutée — technologie, IA et design au service de votre croissance.
+          <div
+            className="rise"
+            style={{
+              marginTop: 48,
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0, 1fr) auto',
+              gap: 40,
+              alignItems: 'end',
+              animationDelay: '0.15s',
+            }}
+          >
+            <p
+              style={{
+                maxWidth: 620,
+                fontFamily: 'var(--font-body), sans-serif',
+                fontSize: 'clamp(16px, 1.5vw, 19px)',
+                lineHeight: 1.7,
+                color: 'var(--ink-soft)',
+              }}
+            >
+              Subleet conçoit des produits SaaS, des automatisations IA et des
+              sites performants pour transformer une idée claire en expérience
+              digitale solide. <Link href="/products" className="italic-shift" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--ember)' }}>fi-hub</Link>{' '}
+              est notre premier produit public.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
+              <Link href="/products" className="btn-ember">
+                Voir les produits
+              </Link>
+              <Link href="/contact" className="btn-ghost" style={{ boxShadow: 'none' }}>
+                Nous écrire
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        <aside
+          className="rise hero-aside"
+          style={{
+            position: 'relative',
+            paddingLeft: 28,
+            borderLeft: '1px solid var(--ink-faint)',
+            animationDelay: '0.25s',
+          }}
+        >
+          <div
+            className="mono"
+            style={{
+              fontSize: 10,
+              textTransform: 'uppercase',
+              letterSpacing: '0.2em',
+              color: 'var(--ember-hot)',
+              marginBottom: 18,
+            }}
+          >
+            Produit en ligne
+          </div>
+
+          <h3
+            className="display"
+            style={{
+              fontSize: 28,
+              fontWeight: 600,
+              color: 'var(--ink)',
+              lineHeight: 1.05,
+              marginBottom: 12,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            <span className="display-italic">fi-hub</span>
+            <br />
+            Suivi patrimonial simplifié.
+          </h3>
+
+          <p
+            style={{
+              fontSize: 14,
+              lineHeight: 1.6,
+              color: 'var(--ink-soft)',
+              marginBottom: 28,
+            }}
+          >
+            Un tableau de bord personnel pour suivre vos comptes, vos mouvements
+            et votre allocation au même endroit.
           </p>
 
-          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-            <Link href="/products" style={{
-              background: '#3d3028', borderRadius: 10,
-              padding: '14px 32px', color: '#f0ebe4',
-              fontFamily: 'var(--font-dm-sans), sans-serif',
-              fontSize: 15, fontWeight: 600, textDecoration: 'none',
-              boxShadow: '0 4px 24px rgba(61,48,40,0.2)',
-              transition: 'all 0.3s', display: 'inline-block',
+          <div
+            style={{
+              background: 'var(--noir)',
+              color: 'var(--paper)',
+              padding: '18px 20px',
+              borderRadius: 0,
+              border: '1px solid var(--ink)',
+              boxShadow: '6px 6px 0 var(--ember)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-            onMouseLeave={e => (e.currentTarget.style.transform = '')}
-            >Découvrir nos produits</Link>
-
-            <Link href="/contact" style={{
-              background: 'transparent', border: '1px solid rgba(61,48,40,0.2)',
-              borderRadius: 10, padding: '14px 32px', color: '#3d3028',
-              fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 15, fontWeight: 500,
-              textDecoration: 'none', transition: 'all 0.3s', display: 'inline-block',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(61,48,40,0.4)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(61,48,40,0.2)')}
-            >Nous contacter</Link>
-          </div>
-        </div>
-
-        {/* Right — fi-hub mockup */}
-        <div className="hero-card-outer" style={{
-          opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(40px)',
-          transition: 'all 1s cubic-bezier(0.22,1,0.36,1) 0.2s',
-        }}>
-          <div style={{
-            background: '#2c2218', border: '1px solid rgba(61,48,40,0.15)',
-            borderRadius: 20, padding: 28, position: 'relative',
-            boxShadow: '0 24px 80px rgba(61,48,40,0.15)',
-          }}>
-            {/* Card header — logo + name */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 10, flexShrink: 0,
-                background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}88)`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: 'var(--font-poppins), sans-serif' }}>f</span>
-              </div>
-              <div>
-                <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 15, color: '#f0ebe4' }}>fi-hub</div>
-                <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>Wealth Tracking</div>
-              </div>
+          >
+            <div
+              className="mono"
+              style={{
+                fontSize: 10,
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                color: 'rgba(236,223,203,0.4)',
+                marginBottom: 12,
+                display: 'flex',
+                justifyContent: 'space-between',
+              }}
+            >
+              <span>Vue fi-hub</span>
+              <span style={{ color: '#4ade80' }}>Démo</span>
             </div>
 
-            {/* Chart — overflow:visible so the stroke tip isn't clipped */}
-            <svg
-              viewBox="0 -6 300 76"
-              style={{ width: '100%', height: 70, marginBottom: 16, overflow: 'visible' }}
+            <div
+              className="display"
+              style={{
+                fontSize: 36,
+                fontWeight: 600,
+                letterSpacing: '-0.03em',
+                color: 'var(--paper)',
+                fontVariantNumeric: 'tabular-nums',
+                marginBottom: 14,
+              }}
             >
+              85 170 <span style={{ fontStyle: 'italic', color: 'var(--ember)', fontWeight: 400 }}>€</span>
+            </div>
+
+            <svg viewBox="0 0 240 50" style={{ width: '100%', height: 42, overflow: 'visible' }}>
               <defs>
-                <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={ACCENT} stopOpacity="0.35" />
-                  <stop offset="100%" stopColor={ACCENT} stopOpacity="0" />
+                <linearGradient id="heroChart" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--ember)" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="var(--ember)" stopOpacity="0" />
                 </linearGradient>
               </defs>
-              {/* Path stays inside the original coords; viewBox extended upward by 6 */}
-              <path d="M0,55 Q30,48 60,42 T120,28 T180,32 T240,14 T300,4"
-                fill="none" stroke={ACCENT} strokeWidth="2" strokeLinecap="round" />
-              <path d="M0,55 Q30,48 60,42 T120,28 T180,32 T240,14 T300,4 L300,70 L0,70Z"
-                fill="url(#chartGrad)" />
+              <path
+                d="M0,38 Q20,34 40,30 T80,22 T120,26 T160,16 T200,14 T240,4"
+                fill="none"
+                stroke="var(--ember)"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M0,38 Q20,34 40,30 T80,22 T120,26 T160,16 T200,14 T240,4 L240,50 L0,50 Z"
+                fill="url(#heroChart)"
+              />
             </svg>
-
-            {/* Account tiles */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
-              {[
-                { label: 'PEA', val: '24 350 €' },
-                { label: 'CTO', val: '18 720 €' },
-                { label: 'AV', val: '42 100 €' },
-              ].map(s => (
-                <div key={s.label} style={{ background: 'rgba(240,235,228,0.05)', borderRadius: 10, padding: '10px 12px' }}>
-                  <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 10, color: 'rgba(240,235,228,0.4)', marginBottom: 4 }}>{s.label}</div>
-                  <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 14, fontWeight: 700, color: '#f0ebe4' }}>{s.val}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Floating total badge — top-right */}
-            <div className="hero-float-badge" style={{
-              position: 'absolute', top: -16, right: -16, background: '#3a2e22',
-              border: '1px solid rgba(240,235,228,0.08)', borderRadius: 12, padding: '10px 16px',
-              boxShadow: '0 8px 32px rgba(61,48,40,0.3)',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between' }}>
-                <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>Portefeuille total</div>
-              </div>
-              <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 20, fontWeight: 800, color: '#f0ebe4' }}>85 170 €</div>
-              <span style={{
-                  background: 'rgba(74,222,128,0.15)', color: '#4ade80',
-                  fontSize: 14, fontWeight: 700, padding: '3px 8px', borderRadius: 10,
-                  fontFamily: 'var(--font-dm-sans), sans-serif', letterSpacing: '0.03em',
-                  display: 'block', width: 'fit-content', margin: '1px auto 0',
-                }}>+12,4 %</span>
-            </div>
           </div>
-        </div>
 
+          <div style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Link
+              href="/products"
+              className="draw-link mono"
+              style={{
+                fontSize: 11,
+                textTransform: 'uppercase',
+                letterSpacing: '0.18em',
+                color: 'var(--ember-hot)',
+                fontWeight: 600,
+              }}
+            >
+              Voir le produit →
+            </Link>
+          </div>
+        </aside>
       </div>
     </section>
   )
 }
+

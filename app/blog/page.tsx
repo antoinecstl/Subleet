@@ -4,34 +4,78 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { BLOG_POSTS } from '@/lib/blog-posts'
 import type { BlogPost } from '@/lib/blog-posts'
-import { ACCENT } from '@/lib/theme'
 
-function BlogCard({ post }: { post: BlogPost }) {
+function BlogCard({ post, index }: { post: BlogPost; index: number }) {
   const [hovered, setHovered] = useState(false)
+
   return (
     <Link
       href={`/blog/${post.slug}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      className="editorial-list-row"
       style={{
-        background: hovered ? '#fff' : 'rgba(61,48,40,0.02)',
-        border: `1px solid ${hovered ? 'rgba(61,48,40,0.1)' : 'rgba(61,48,40,0.06)'}`,
-        borderRadius: 16, padding: 'clamp(20px, 3vw, 32px)',
-        cursor: 'pointer', transition: 'all 0.4s cubic-bezier(0.22,1,0.36,1)',
-        boxShadow: hovered ? '0 8px 32px rgba(61,48,40,0.06)' : 'none',
-        textDecoration: 'none', display: 'block',
+        display: 'grid',
+        gridTemplateColumns: '110px minmax(0, 1fr) 190px',
+        gap: 32,
+        padding: '34px 0',
+        borderTop: '1px solid var(--ink-faint)',
+        alignItems: 'baseline',
+        position: 'relative',
+        background: hovered ? 'rgba(217,119,6,0.04)' : 'transparent',
+        transition: 'background 0.35s ease',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 12, fontWeight: 600, color: ACCENT, background: ACCENT + '12', padding: '3px 10px', borderRadius: 5 }}>{post.cat}</span>
-        <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.4)' }}>{post.date}</span>
-        <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.25)' }}>·</span>
-        <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, color: 'rgba(61,48,40,0.4)' }}>{post.readTime}</span>
+      <span
+        className="index-num"
+        style={{
+          fontSize: 'clamp(54px, 6vw, 84px)',
+          fontStyle: hovered ? 'italic' : 'normal',
+          transition: 'font-style 0.3s ease, transform 0.3s ease',
+          transform: hovered ? 'translateX(6px)' : 'none',
+        }}
+      >
+        {String(index + 1).padStart(2, '0')}
+      </span>
+
+      <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+          <span className="eyebrow eyebrow-ember">{post.cat}</span>
+          <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--ink-muted)' }}>
+            {post.date} · {post.readTime}
+          </span>
+        </div>
+        <h2
+          className="display"
+          style={{
+            fontSize: 'clamp(30px, 4vw, 56px)',
+            fontWeight: 600,
+            color: 'var(--ink)',
+            letterSpacing: '-0.03em',
+            marginBottom: 12,
+          }}
+        >
+          {post.title}
+        </h2>
+        <p style={{ maxWidth: 720, color: 'var(--ink-soft)', fontSize: 16, lineHeight: 1.7 }}>
+          {post.excerpt}
+        </p>
       </div>
-      <h3 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 'clamp(17px, 2vw, 21px)', color: '#3d3028', marginBottom: 8, lineHeight: 1.35 }}>{post.title}</h3>
-      <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 15, color: 'rgba(61,48,40,0.5)', lineHeight: 1.7, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{post.excerpt}</p>
-      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16, fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 14, fontWeight: 600, color: ACCENT }}>
-        Lire l'article <span style={{ display: 'inline-block', transition: 'transform 0.3s', transform: hovered ? 'translateX(4px)' : 'translateX(0)' }}>→</span>
+
+      <span
+        className="mono"
+        style={{
+          justifySelf: 'end',
+          fontSize: 11,
+          textTransform: 'uppercase',
+          letterSpacing: '0.2em',
+          color: hovered ? 'var(--ember-hot)' : 'var(--ink)',
+          borderBottom: '1px solid currentColor',
+          paddingBottom: 4,
+          transition: 'color 0.3s ease',
+        }}
+      >
+        Lire →
       </span>
     </Link>
   )
@@ -39,39 +83,69 @@ function BlogCard({ post }: { post: BlogPost }) {
 
 export default function BlogPage() {
   const [selectedCat, setSelectedCat] = useState('Tous')
-  const cats = ['Tous', 'IA', 'Produit', 'Stratégie']
-  const filtered = selectedCat === 'Tous' ? BLOG_POSTS : BLOG_POSTS.filter(p => p.cat === selectedCat)
+  const cats = ['Tous', ...Array.from(new Set(BLOG_POSTS.map(post => post.cat)))]
+  const filtered = selectedCat === 'Tous' ? BLOG_POSTS : BLOG_POSTS.filter(post => post.cat === selectedCat)
 
   return (
     <div style={{ paddingTop: 72 }}>
-      <section style={{ padding: '72px clamp(20px, 5vw, 80px) 120px' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, fontWeight: 600, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Blog</span>
-            <h1 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800, fontSize: 'clamp(30px, 4vw, 48px)', color: '#3d3028', letterSpacing: '-0.03em', marginTop: 12 }}>Réflexions & insights</h1>
-            <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 16, color: 'rgba(61,48,40,0.5)', marginTop: 12, lineHeight: 1.6 }}>
-              Nos réflexions sur l'IA, les produits tech et la stratégie digitale.
-            </p>
+      <section style={{ padding: 'clamp(88px, 13vh, 150px) clamp(20px, 4vw, 56px) 54px' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+          <div className="eyebrow eyebrow-ember" style={{ marginBottom: 18 }}>
+            Blog
           </div>
+          <h1
+            className="display"
+            style={{
+              fontSize: 'clamp(64px, 10vw, 148px)',
+              fontWeight: 500,
+              color: 'var(--ink)',
+              lineHeight: 0.9,
+              letterSpacing: '-0.04em',
+              maxWidth: 1040,
+            }}
+          >
+            Notes sur les produits, l’IA et les interfaces.
+          </h1>
+          <p
+            style={{
+              marginTop: 32,
+              maxWidth: 680,
+              fontSize: 'clamp(17px, 1.6vw, 21px)',
+              lineHeight: 1.7,
+              color: 'var(--ink-soft)',
+            }}
+          >
+            Des textes courts sur les décisions qui comptent quand on construit
+            un produit digital : cadrage, usage, design, automatisation.
+          </p>
+        </div>
+      </section>
 
-          {/* Filter tabs */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 40, justifyContent: 'center', flexWrap: 'wrap' }}>
-            {cats.map(c => (
-              <button key={c} onClick={() => setSelectedCat(c)} style={{
-                background: selectedCat === c ? ACCENT + '15' : 'rgba(61,48,40,0.04)',
-                border: `1px solid ${selectedCat === c ? ACCENT + '30' : 'rgba(61,48,40,0.08)'}`,
-                borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
-                fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, fontWeight: 500,
-                color: selectedCat === c ? ACCENT : 'rgba(61,48,40,0.55)', transition: 'all 0.3s',
-              }}>{c}</button>
+      <section style={{ padding: '0 clamp(20px, 4vw, 56px) clamp(88px, 12vh, 150px)' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 34 }}>
+            {cats.map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCat(cat)}
+                className={selectedCat === cat ? 'btn-ember' : 'btn-ghost'}
+                style={{ padding: '11px 16px', fontSize: 11 }}
+              >
+                {cat}
+              </button>
             ))}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {filtered.map(post => <BlogCard key={post.id} post={post} />)}
+          <hr className="rule-ember" />
+          <div role="list">
+            {filtered.map((post, index) => (
+              <BlogCard key={post.id} post={post} index={index} />
+            ))}
           </div>
+          <hr className="rule" />
         </div>
       </section>
     </div>
   )
 }
+

@@ -1,134 +1,214 @@
 import type { Metadata } from 'next'
-import { ACCENT } from '@/lib/theme'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Produits',
-  description: 'Découvrez l\'écosystème Subleet : fi-hub et nos futurs produits.',
+  description: 'Découvrez les produits Subleet, dont fi-hub, notre application de suivi patrimonial.',
 }
 
-const TAGS = ['Temps réel', 'Multi-comptes', 'Analyse performance', 'Allocation', 'Sécurisé']
+const FEATURES = [
+  {
+    title: 'Vue consolidée',
+    text: 'Regrouper les principales enveloppes financières dans une interface unique et lisible.',
+  },
+  {
+    title: 'Suivi dans le temps',
+    text: 'Comprendre l’évolution d’un portefeuille sans multiplier les fichiers et les interfaces.',
+  },
+  {
+    title: 'Lecture claire',
+    text: 'Mettre en avant les informations utiles plutôt que d’empiler des métriques secondaires.',
+  },
+]
 
 const ACCOUNTS = [
-  { l: 'PEA', v: '€24,350', c: '#f59e0b' },
-  { l: 'CTO', v: '€18,720', c: '#5c9cfc' },
-  { l: 'Livret A', v: '€12,000', c: '#4ade80' },
-  { l: 'AV', v: '€30,100', c: '#e879a0' },
+  { label: 'PEA', value: '24 350 €', tone: 'var(--ember)' },
+  { label: 'CTO', value: '18 720 €', tone: '#5c9cfc' },
+  { label: 'AV', value: '42 100 €', tone: '#4ade80' },
 ]
 
 export default function ProductsPage() {
   return (
     <div style={{ paddingTop: 72 }}>
-      <section style={{ padding: '80px clamp(24px, 5vw, 80px) 40px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto' }}>
-          <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 13, fontWeight: 600, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Nos produits</span>
-          <h1 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800, fontSize: 'clamp(32px, 4vw, 56px)', color: '#3d3028', letterSpacing: '-0.03em', marginTop: 12 }}>Écosystème Subleet</h1>
-          <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 17, color: 'rgba(61,48,40,0.55)', maxWidth: 560, margin: '16px auto 0', lineHeight: 1.7 }}>Des produits conçus pour résoudre des problèmes concrets avec élégance.</p>
+      <section style={{ padding: 'clamp(88px, 13vh, 150px) clamp(20px, 4vw, 56px) 56px' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+          <div className="eyebrow eyebrow-ember" style={{ marginBottom: 18 }}>
+            Produits
+          </div>
+          <h1
+            className="display"
+            style={{
+              fontSize: 'clamp(64px, 10vw, 148px)',
+              fontWeight: 500,
+              color: 'var(--ink)',
+              lineHeight: 0.9,
+              letterSpacing: '-0.04em',
+              maxWidth: 980,
+            }}
+          >
+            Des outils sobres pour des usages concrets.
+          </h1>
+          <p
+            style={{
+              marginTop: 32,
+              maxWidth: 680,
+              fontSize: 'clamp(17px, 1.6vw, 21px)',
+              lineHeight: 1.7,
+              color: 'var(--ink-soft)',
+            }}
+          >
+            Subleet développe des produits digitaux avec une attention particulière
+            portée à la clarté, à la stabilité et à l’expérience utilisateur.
+          </p>
         </div>
       </section>
 
-      <section style={{ padding: '40px clamp(24px, 5vw, 80px) 120px' }}>
-        <div style={{
-          maxWidth: 1080, margin: '0 auto',
-          background: '#fff', border: '1px solid rgba(61,48,40,0.08)',
-          borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 40px rgba(61,48,40,0.06)',
-        }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: 480 }} className="hero-grid">
-            <div style={{ padding: 'clamp(32px, 4vw, 56px)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ color: '#fff', fontSize: 20, fontWeight: 700, fontFamily: 'var(--font-poppins), sans-serif' }}>f</span>
-                </div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 22, color: '#3d3028' }}>fi-hub</div>
-                  <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 12, color: ACCENT, background: ACCENT + '12', padding: '2px 8px', borderRadius: 4 }}>SaaS</span>
-                </div>
+      <section style={{ padding: '0 clamp(20px, 4vw, 56px) clamp(88px, 12vh, 150px)' }}>
+        <div style={{ maxWidth: 1440, margin: '0 auto' }}>
+          <div
+            className="grid-2"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gap: 0,
+              border: '1px solid var(--ink)',
+              background: 'var(--paper-warm)',
+              boxShadow: '14px 14px 0 var(--ember)',
+            }}
+          >
+            <div style={{ padding: 'clamp(32px, 5vw, 72px)' }}>
+              <div className="eyebrow eyebrow-ember" style={{ marginBottom: 18 }}>
+                fi-hub
               </div>
-              <h2 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 800, fontSize: 'clamp(24px, 3vw, 36px)', color: '#3d3028', lineHeight: 1.15, marginBottom: 16, letterSpacing: '-0.02em' }}>
-                Tout votre patrimoine, un seul regard
+              <h2
+                className="display"
+                style={{
+                  fontSize: 'clamp(44px, 6vw, 92px)',
+                  fontWeight: 500,
+                  color: 'var(--ink)',
+                  lineHeight: 0.95,
+                  letterSpacing: '-0.035em',
+                  marginBottom: 24,
+                }}
+              >
+                Suivi patrimonial simplifié.
               </h2>
-              <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 16, color: 'rgba(61,48,40,0.55)', lineHeight: 1.8, marginBottom: 28 }}>
-                fi-hub centralise PEA, comptes-titres, livrets d&apos;épargne et assurances-vie dans un tableau de bord unifié. Valorisation en temps réel, analyse de performance, et vue consolidée de votre allocation.
+              <p style={{ fontSize: 17, lineHeight: 1.75, color: 'var(--ink-soft)', maxWidth: 560, marginBottom: 34 }}>
+                fi-hub aide à suivre ses comptes et son allocation dans une interface
+                claire. L’objectif : réduire la friction entre les informations
+                dispersées et les décisions à prendre.
               </p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
-                {TAGS.map(t => (
-                  <span key={t} style={{
-                    fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 12, fontWeight: 500,
-                    color: 'rgba(61,48,40,0.6)', background: 'rgba(61,48,40,0.04)',
-                    border: '1px solid rgba(61,48,40,0.08)', borderRadius: 6, padding: '5px 12px',
-                  }}>{t}</span>
+
+              <div style={{ display: 'grid', gap: 18, marginBottom: 40 }}>
+                {FEATURES.map((feature, index) => (
+                  <div
+                    key={feature.title}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '52px 1fr',
+                      gap: 18,
+                      paddingTop: 18,
+                      borderTop: '1px solid var(--ink-faint)',
+                    }}
+                  >
+                    <span className="index-num" style={{ fontSize: 42, fontStyle: 'normal' }}>
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <div>
+                      <h3 className="display" style={{ fontSize: 26, fontWeight: 600, color: 'var(--ink)', marginBottom: 8 }}>
+                        {feature.title}
+                      </h3>
+                      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65 }}>{feature.text}</p>
+                    </div>
+                  </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                <a href="https://fi-hub.subleet.com" target="_blank" rel="noopener noreferrer" style={{
-                  background: '#3d3028', border: 'none', borderRadius: 8,
-                  padding: '12px 24px', color: '#f0ebe4',
-                  fontFamily: 'var(--font-dm-sans), sans-serif',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
-                  boxShadow: '0 4px 16px rgba(61,48,40,0.15)',
-                }}>Accéder à fi-hub →</a>
-                <a href="/contact?subject=fihub" style={{
-                  background: 'transparent', border: '1px solid rgba(61,48,40,0.15)',
-                  borderRadius: 8, padding: '12px 20px', color: 'rgba(61,48,40,0.7)',
-                  fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 14, fontWeight: 500,
-                  cursor: 'pointer', textDecoration: 'none', display: 'inline-block',
-                }}>Nous contacter</a>
+
+              <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+                <a href="https://fi-hub.subleet.com" target="_blank" rel="noopener noreferrer" className="btn-ember">
+                  Ouvrir l&apos;app ↗
+                </a>
+                <Link href="/contact?subject=fihub" className="btn-ghost">
+                  Nous contacter
+                </Link>
               </div>
             </div>
 
-            <div style={{
-              background: '#2c2218', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40,
-              position: 'relative',
-            }}>
-              <div style={{ position: 'absolute', inset: 0, opacity: 0.04,
-                backgroundImage: 'linear-gradient(rgba(240,235,228,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(240,235,228,0.3) 1px, transparent 1px)',
-                backgroundSize: '20px 20px',
-              }} />
-              <div style={{ width: '100%', maxWidth: 340, position: 'relative', zIndex: 1 }}>
-                <div style={{ background: 'rgba(10,10,18,0.5)', borderRadius: 14, border: '1px solid rgba(240,235,228,0.08)', padding: 20, marginBottom: 12 }}>
-                  <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)', marginBottom: 8 }}>Patrimoine total</div>
-                  <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 28, fontWeight: 800, color: '#f0ebe4' }}>€85,170</div>
-                  <div style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 12, color: '#4ade80', marginTop: 4 }}>▲ +12.4% ce mois</div>
-                  <svg viewBox="0 0 280 50" style={{ width: '100%', height: 50, marginTop: 12 }}>
+            <div
+              style={{
+                background: 'var(--noir)',
+                color: 'var(--paper)',
+                padding: 'clamp(28px, 4vw, 56px)',
+                borderLeft: '1px solid var(--ink)',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ width: '100%' }}>
+                <div
+                  style={{
+                    background: 'var(--noir-soft)',
+                    border: '1px solid rgba(236,223,203,0.14)',
+                    padding: 'clamp(20px, 3vw, 34px)',
+                    boxShadow: '10px 10px 0 var(--ember)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 26 }}>
+                    <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(236,223,203,0.45)' }}>
+                      fi-hub
+                    </span>
+                    <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: '#86efac' }}>
+                      Démo
+                    </span>
+                  </div>
+
+                  <div className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.22em', color: 'rgba(236,223,203,0.45)', marginBottom: 8 }}>
+                    Portefeuille total
+                  </div>
+                  <div className="display" style={{ fontSize: 'clamp(52px, 7vw, 86px)', fontWeight: 600, color: 'var(--paper)', marginBottom: 20 }}>
+                    85 170 <span className="display-italic" style={{ color: 'var(--ember)', fontWeight: 400 }}>€</span>
+                  </div>
+
+                  <svg viewBox="0 0 420 150" style={{ width: '100%', height: 170, overflow: 'visible', marginBottom: 24 }}>
                     <defs>
-                      <linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={ACCENT} stopOpacity="0.25" />
-                        <stop offset="100%" stopColor={ACCENT} stopOpacity="0" />
+                      <linearGradient id="productsChart" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--ember)" stopOpacity="0.44" />
+                        <stop offset="100%" stopColor="var(--ember)" stopOpacity="0" />
                       </linearGradient>
                     </defs>
-                    <path d="M0,40 Q35,38 70,32 T140,22 T210,26 T280,8" fill="none" stroke={ACCENT} strokeWidth="2" />
-                    <path d="M0,40 Q35,38 70,32 T140,22 T210,26 T280,8 L280,50 L0,50Z" fill="url(#pg2)" />
+                    {[30, 60, 90, 120].map(y => (
+                      <line key={y} x1="0" y1={y} x2="420" y2={y} stroke="rgba(236,223,203,0.07)" />
+                    ))}
+                    <path d="M0,118 C44,110 62,88 110,90 C160,92 170,60 220,64 C270,68 282,38 330,40 C374,42 390,24 420,18" fill="none" stroke="var(--ember)" strokeWidth="2.4" strokeLinecap="round" />
+                    <path d="M0,118 C44,110 62,88 110,90 C160,92 170,60 220,64 C270,68 282,38 330,40 C374,42 390,24 420,18 L420,150 L0,150 Z" fill="url(#productsChart)" />
                   </svg>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                  {ACCOUNTS.map(a => (
-                    <div key={a.l} style={{ background: 'rgba(10,10,18,0.5)', borderRadius: 10, border: '1px solid rgba(240,235,228,0.05)', padding: '12px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: a.c }} />
-                        <span style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 11, color: 'rgba(240,235,228,0.4)' }}>{a.l}</span>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid rgba(236,223,203,0.10)' }}>
+                    {ACCOUNTS.map((account, index) => (
+                      <div
+                        key={account.label}
+                        style={{
+                          padding: '16px 12px 0',
+                          borderRight: index < ACCOUNTS.length - 1 ? '1px solid rgba(236,223,203,0.10)' : 'none',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: account.tone }} />
+                          <span className="mono" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'rgba(236,223,203,0.42)' }}>
+                            {account.label}
+                          </span>
+                        </div>
+                        <strong style={{ color: 'var(--paper)', fontSize: 16 }}>{account.value}</strong>
                       </div>
-                      <div style={{ fontFamily: 'var(--font-poppins), sans-serif', fontSize: 15, fontWeight: 700, color: '#f0ebe4' }}>{a.v}</div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <section style={{ padding: '0 clamp(24px, 5vw, 80px) 120px' }}>
-        <div style={{ maxWidth: 1080, margin: '0 auto' }}>
-          <h3 style={{ fontFamily: 'var(--font-poppins), sans-serif', fontWeight: 700, fontSize: 20, color: 'rgba(61,48,40,0.4)', marginBottom: 24 }}>Prochainement</h3>
-          <div style={{
-            background: 'rgba(61,48,40,0.03)', border: '1px dashed rgba(61,48,40,0.12)',
-            borderRadius: 16, padding: 40, textAlign: 'center',
-          }}>
-            <p style={{ fontFamily: 'var(--font-dm-sans), sans-serif', fontSize: 15, color: 'rgba(61,48,40,0.4)' }}>
-              D&apos;autres produits sont en cours de développement. Restez connectés.
-            </p>
           </div>
         </div>
       </section>
     </div>
   )
 }
+

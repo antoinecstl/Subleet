@@ -1,20 +1,28 @@
 import type { Metadata } from 'next'
-import { Poppins, DM_Sans } from 'next/font/google'
+import { Fraunces, JetBrains_Mono, DM_Sans } from 'next/font/google'
 import './globals.css'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 
-const poppins = Poppins({
+const fraunces = Fraunces({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-poppins',
+  style: ['normal', 'italic'],
+  axes: ['opsz', 'SOFT'],
+  variable: '--font-display',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-mono',
   display: 'swap',
 })
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500', '600'],
+  variable: '--font-body',
   display: 'swap',
 })
 
@@ -55,14 +63,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className={`${poppins.variable} ${dmSans.variable}`}>
-      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <html lang="fr" className={`${fraunces.variable} ${jetbrainsMono.variable} ${dmSans.variable}`}>
+      <body>
+        <div className="paper-grain" aria-hidden />
         <Navbar />
-        <main style={{ flex: 1 }}>
-          {children}
-        </main>
+        <main>{children}</main>
         <Footer />
       </body>
     </html>
   )
 }
+
