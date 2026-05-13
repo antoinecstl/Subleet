@@ -178,56 +178,82 @@ export const BLOG_POSTS: BlogPost[] = [
   },
   {
     id: 4,
-    slug: 'interface-credibilite',
-    title: 'Une interface crédible ne se contente pas d’être jolie',
-    cat: 'Design',
+    slug: 'rag-agents-evaluations-ia',
+    title: 'RAG, agents et évaluations : rendre l’IA exploitable',
+    cat: 'IA',
     date: '28 mars 2026',
-    readTime: '4 min',
+    readTime: '7 min',
     excerpt:
-      'La crédibilité d’un site ou d’un outil se joue dans les détails : rythme, textes, états, cohérence et capacité à guider sans surjouer.',
+      'Passer d’une démo IA impressionnante à un système fiable demande plus qu’un bon prompt : récupération de contexte, appels outils, sorties structurées et évaluations doivent être pensés ensemble.',
     content: [
       {
         type: 'intro',
         text:
-          'Un design peut impressionner quelques secondes et échouer dès que l’utilisateur doit vraiment s’en servir. La crédibilité naît quand la forme aide la compréhension.',
+          'La plupart des prototypes IA fonctionnent sur quelques exemples bien choisis. La difficulté commence quand le système doit traiter des données réelles, des cas incomplets, des documents ambigus et des demandes qui ne rentrent pas dans le scénario initial.',
       },
       {
         type: 'h2',
-        text: 'Le style doit servir la lecture',
+        text: 'Le RAG n’est pas une recherche magique',
       },
       {
         type: 'p',
         text:
-          'Typographie, couleur, grille et animation ne sont pas des couches décoratives. Ce sont des outils de hiérarchie. Leur rôle est d’indiquer ce qui compte, ce qui est secondaire, et ce qui peut attendre.',
-      },
-      {
-        type: 'h2',
-        text: 'Les détails qui changent la perception',
+          'Un pipeline RAG fiable dépend d’abord de la qualité de l’indexation. Le découpage des documents, les métadonnées, le choix du modèle d’embeddings et la stratégie de reranking influencent directement la réponse finale. Si le bon passage n’est pas récupéré, le modèle ne peut pas l’inventer proprement.',
       },
       {
         type: 'ul',
         items: [
-          'Des titres qui décrivent vraiment la section.',
-          'Des boutons dont l’action est évidente.',
-          'Des contrastes suffisants pour lire sans effort.',
-          'Des états d’erreur et de succès écrits clairement.',
-          'Une cohérence visuelle entre la page d’accueil et les pages profondes.',
+          'Chunking par structure logique plutôt que par taille fixe quand le document le permet.',
+          'Métadonnées explicites pour filtrer par source, date, client, version ou type de document.',
+          'Hybrid search lorsque les mots exacts comptent autant que la proximité sémantique.',
+          'Reranking sur les meilleurs candidats pour limiter le bruit transmis au modèle.',
         ],
+      },
+      {
+        type: 'h2',
+        text: 'Les agents sont surtout des boucles de décision',
       },
       {
         type: 'p',
         text:
-          'Le niveau de finition n’est pas seulement esthétique. Il donne une indication sur le sérieux du produit, sur sa maintenance future et sur l’attention portée aux utilisateurs.',
+          'Un agent utile n’est pas un modèle “plus autonome”. C’est une boucle qui choisit une action, appelle un outil, lit le résultat, puis décide si elle doit continuer ou s’arrêter. La qualité vient des garde-fous : permissions, limites d’itération, schémas de sortie, gestion des erreurs et journalisation.',
+      },
+      {
+        type: 'p',
+        text:
+          'Les appels outils doivent rester explicites. Un modèle qui peut créer un ticket, interroger une base ou envoyer un email doit travailler avec des entrées validées, des confirmations sur les actions sensibles et des messages d’erreur compréhensibles.',
+      },
+      {
+        type: 'h2',
+        text: 'Évaluer avant de généraliser',
+      },
+      {
+        type: 'p',
+        text:
+          'Sans jeu d’évaluation, chaque changement de prompt, de modèle ou de retriever devient une décision au ressenti. Il faut des cas de test représentatifs : questions faciles, documents contradictoires, absence de réponse, formats attendus, contraintes métier.',
+      },
+      {
+        type: 'ul',
+        items: [
+          'Mesurer la récupération : le bon contexte est-il présent dans les passages fournis ?',
+          'Mesurer la réponse : est-elle exacte, complète et suffisamment sourcée ?',
+          'Mesurer le format : le JSON ou la sortie structurée respecte-t-il le schéma attendu ?',
+          'Mesurer le coût et la latence pour savoir si le système tient en usage réel.',
+        ],
       },
       {
         type: 'quote',
-        text: 'Une bonne interface fait baisser le niveau de doute.',
+        text: 'Un système IA fiable se construit moins autour d’un prompt parfait qu’autour d’une boucle observable.',
+      },
+      {
+        type: 'p',
+        text:
+          'La bonne architecture dépend du risque. Un assistant interne peut tolérer plus d’incertitude qu’un outil qui modifie des données métier. Dans tous les cas, les briques techniques doivent rendre les erreurs visibles, testables et corrigibles.',
       },
     ],
   },
 ]
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
-  return BLOG_POSTS.find(p => p.slug === slug)
+  return BLOG_POSTS.find(post => post.slug === slug)
 }
-

@@ -7,8 +7,8 @@ export default function HeroSection() {
     <section
       style={{
         position: 'relative',
-        paddingTop: 'clamp(132px, 16vh, 190px)',
-        paddingBottom: 'clamp(72px, 10vh, 120px)',
+        paddingTop: 'clamp(104px, 12vh, 142px)',
+        paddingBottom: 'clamp(56px, 7vh, 86px)',
         overflow: 'hidden',
       }}
     >
@@ -32,9 +32,9 @@ export default function HeroSection() {
           margin: '0 auto',
           padding: '0 clamp(20px, 4vw, 56px)',
           display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1fr) 340px',
-          gap: 'clamp(48px, 6vw, 88px)',
-          alignItems: 'end',
+          gridTemplateColumns: 'minmax(0, 1fr) 320px',
+          gap: 'clamp(36px, 5vw, 72px)',
+          alignItems: 'center',
         }}
         className="grid-2"
       >
@@ -42,39 +42,27 @@ export default function HeroSection() {
           <h1
             className="display rise hero-headline"
             style={{
-              fontSize: 'clamp(64px, 9.5vw, 156px)',
+              fontSize: 'clamp(64px, 10vw, 148px)',
               fontWeight: 500,
               color: 'var(--ink)',
-              lineHeight: 0.92,
-              letterSpacing: '-0.035em',
+              lineHeight: 0.9,
+              letterSpacing: '-0.04em',
             }}
           >
-            Nous bâtissons <br />
-            les outils que les{' '}
-            <span
-              className="display-italic"
-              style={{ color: 'var(--ember-hot)', fontWeight: 400 }}
-            >
-              autres
+            Software,<br />
+            IA appliquée,<br />
+            <span className="display-italic" style={{ color: 'var(--ember-hot)', fontWeight: 400 }}>
+              systèmes utiles.
             </span>
-            <br />
-            n&apos;ont pas{' '}
-            <span
-              className="display-italic"
-              style={{ color: 'var(--ink)', fontWeight: 400 }}
-            >
-              encore
-            </span>{' '}
-            <span style={{ color: 'var(--ember)', fontWeight: 700 }}>écrits.</span>
           </h1>
 
           <div
             className="rise"
             style={{
-              marginTop: 48,
+              marginTop: 34,
               display: 'grid',
               gridTemplateColumns: 'minmax(0, 1fr) auto',
-              gap: 40,
+              gap: 32,
               alignItems: 'end',
               animationDelay: '0.15s',
             }}
@@ -88,9 +76,9 @@ export default function HeroSection() {
                 color: 'var(--ink-soft)',
               }}
             >
-              Subleet conçoit des produits SaaS, des automatisations IA et des
-              sites performants pour transformer une idée claire en expérience
-              digitale solide. <Link href="/products" className="italic-shift" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--ember)' }}>fi-hub</Link>{' '}
+              Subleet conçoit des produits logiciels, des systèmes IA et des
+              interfaces métier pour transformer une idée ambitieuse en outil
+              fiable. <Link href="/products" className="italic-shift" style={{ color: 'var(--ink)', borderBottom: '1px solid var(--ember)' }}>fi-hub</Link>{' '}
               est notre premier produit public.
             </p>
 
@@ -236,4 +224,3 @@ export default function HeroSection() {
     </section>
   )
 }
-

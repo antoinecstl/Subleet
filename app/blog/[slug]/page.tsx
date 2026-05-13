@@ -40,7 +40,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
   return (
     <div style={{ paddingTop: 72 }}>
-      <section style={{ padding: 'clamp(76px, 12vh, 130px) clamp(20px, 4vw, 56px) 56px' }}>
+      <section className="article-hero-section" style={{ padding: 'clamp(76px, 12vh, 130px) clamp(20px, 4vw, 56px) 56px' }}>
         <div style={{ maxWidth: 980, margin: '0 auto' }}>
           <Link
             href="/blog"
@@ -65,7 +65,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
           </div>
 
           <h1
-            className="display"
+            className="display article-hero-title"
             style={{
               fontSize: 'clamp(48px, 7.4vw, 104px)',
               fontWeight: 500,
@@ -93,8 +93,9 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
-      <article style={{ padding: '0 clamp(20px, 4vw, 56px) clamp(88px, 12vh, 150px)' }}>
+      <article className="article-page-wrap" style={{ padding: '0 clamp(20px, 4vw, 56px) clamp(88px, 12vh, 150px)' }}>
         <div
+          className="article-shell"
           style={{
             maxWidth: 860,
             margin: '0 auto',
@@ -208,6 +209,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
             })}
 
             <div
+              className="article-bottom-cta"
               style={{
                 marginTop: 68,
                 paddingTop: 34,
@@ -237,4 +239,3 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
     </div>
   )
 }
-

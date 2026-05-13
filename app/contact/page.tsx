@@ -15,8 +15,8 @@ type FormState = {
 type Status = 'idle' | 'sending' | 'success' | 'error'
 
 const SUBJECTS = [
-  { value: 'web', label: 'Création de site web' },
-  { value: 'ia', label: 'Automatisation / IA' },
+  { value: 'product', label: 'Produit SaaS / plateforme' },
+  { value: 'ia', label: 'IA appliquée / agents' },
   { value: 'fihub', label: 'fi-hub' },
   { value: 'autre', label: 'Autre demande' },
 ]
@@ -117,7 +117,7 @@ export default function ContactPage() {
                   marginBottom: 42,
                 }}
               >
-                Site, produit SaaS, automatisation ou besoin plus exploratoire :
+                Produit SaaS, système IA, plateforme interne ou besoin plus exploratoire :
                 envoyez le contexte et les contraintes. Nous reviendrons avec une
                 première lecture concrète.
               </p>
@@ -291,4 +291,3 @@ export default function ContactPage() {
     </div>
   )
 }
-

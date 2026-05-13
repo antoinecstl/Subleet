@@ -1,13 +1,13 @@
 <claude-mem-context>
 # Memory Context
 
-# [Website] recent context, 2026-05-13 1:30am GMT+2
+# [Website] recent context, 2026-05-13 12:21pm GMT+2
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 28 obs (10 310t read) | 212 529t work | 95% savings
+Stats: 38 obs (13 969t read) | 307 284t work | 95% savings
 
 ### May 13, 2026
 120 12:25a 🔵 Subleet Design Token System in lib/theme.ts
@@ -39,6 +39,16 @@ S9 Frontend redesign of Subleet website — full "Atelier Éditorial" rebrand re
 151 12:38a 🔴 Removed Explicit Weight Array from Fraunces Variable Font Config
 152 " 🔵 products/page.tsx Uses Old Design Tokens and Hardcoded Colors — Needs Editorial Redesign
 153 " 🔵 Inner Pages Audit: Contact, Blog, and Blog Slug All Use Old Design System
+154 11:56a ⚖️ Blog Content Overhaul + Mobile Responsiveness Plan
+155 11:57a 🟣 Blog Post #4 Replaced with Technical AI Deep-Dive (RAG/Agents/Evals)
+156 " 🟣 Blog Mobile Responsiveness Overhaul via Semantic CSS Classes
+157 11:58a 🟣 HeroSection Layout Tightened for Mobile Display
+158 12:13p ✅ Hero Headline Responsive Typography Added to globals.css
+159 12:15p ✅ HeroSection Headline Copy and Typography Overhauled
+160 12:16p ✅ Hero Headline Responsive Breakpoint Sizes Bumped Up in globals.css
+161 12:21p 🟣 CLAUDE.md Initialization Requested
+162 " ✅ Subleet Website Positioning Rewrite — Copy Overhaul Across 4 Files
+163 " 🔵 Subleet Blog Content — Static TypeScript Data File with 4 Posts
 
-Access 213k tokens of past work via get_observations([IDs]) or mem-search skill.
+Access 307k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

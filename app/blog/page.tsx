@@ -13,7 +13,7 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
       href={`/blog/${post.slug}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="editorial-list-row"
+      className="editorial-list-row blog-list-row"
       style={{
         display: 'grid',
         gridTemplateColumns: '110px minmax(0, 1fr) 190px',
@@ -46,7 +46,7 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
           </span>
         </div>
         <h2
-          className="display"
+          className="display blog-card-title"
           style={{
             fontSize: 'clamp(30px, 4vw, 56px)',
             fontWeight: 600,
@@ -63,7 +63,7 @@ function BlogCard({ post, index }: { post: BlogPost; index: number }) {
       </div>
 
       <span
-        className="mono"
+        className="mono blog-read-link"
         style={{
           justifySelf: 'end',
           fontSize: 11,
@@ -88,13 +88,13 @@ export default function BlogPage() {
 
   return (
     <div style={{ paddingTop: 72 }}>
-      <section style={{ padding: 'clamp(88px, 13vh, 150px) clamp(20px, 4vw, 56px) 54px' }}>
+      <section className="blog-hero-section" style={{ padding: 'clamp(88px, 13vh, 150px) clamp(20px, 4vw, 56px) 54px' }}>
         <div style={{ maxWidth: 1440, margin: '0 auto' }}>
           <div className="eyebrow eyebrow-ember" style={{ marginBottom: 18 }}>
             Blog
           </div>
           <h1
-            className="display"
+            className="display blog-hero-title"
             style={{
               fontSize: 'clamp(64px, 10vw, 148px)',
               fontWeight: 500,
@@ -148,4 +148,3 @@ export default function BlogPage() {
     </div>
   )
 }
-

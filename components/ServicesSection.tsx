@@ -9,7 +9,6 @@ type Service = {
   title: string
   tag: string
   desc: string
-  meta: string[]
   href: string
   cta: string
 }
@@ -17,33 +16,30 @@ type Service = {
 const SERVICES: Service[] = [
   {
     no: '01',
-    title: 'Produits SaaS',
-    tag: 'Conception produit',
+    title: 'SaaS & produits logiciels',
+    tag: 'Produit · Architecture',
     desc:
-      'Nous construisons des applications web avec une logique métier claire, une interface robuste et une base technique prête à évoluer.',
-    meta: ['fi-hub', 'Produit en ligne'],
+      'Nous concevons des produits logiciels avec une logique métier solide, une architecture maintenable et une interface pensée pour un usage réel.',
     href: '/products',
-    cta: 'Voir fi-hub',
+    cta: 'Voir les produits',
   },
   {
     no: '02',
-    title: 'Sites & Interfaces',
-    tag: 'Design et développement',
+    title: 'IA appliquée',
+    tag: 'Agents · Workflows · RAG',
     desc:
-      'Nous créons des sites rapides, lisibles et crédibles, avec une hiérarchie visuelle pensée pour guider l’utilisateur sans le perdre.',
-    meta: [],
+      'Nous intégrons des systèmes IA dans des flux concrets : assistants internes, agents outillés, recherche augmentée, extraction et automatisation fiable.',
     href: '/contact',
-    cta: 'Demander un devis',
+    cta: 'Explorer un cas d’usage',
   },
   {
     no: '03',
-    title: 'Automatisation & IA',
-    tag: 'Outils internes et workflows',
+    title: 'Plateformes & interfaces métier',
+    tag: 'UX technique · Delivery',
     desc:
-      'Nous automatisons les tâches répétitives et connectons vos outils pour gagner du temps, fiabiliser les opérations et réduire les frictions.',
-    meta: [],
+      'Nous transformons des parcours complexes en outils rapides, lisibles et crédibles : portails, dashboards, back-offices et expériences web avancées.',
     href: '/contact',
-    cta: 'Discuter d\'un projet',
+    cta: 'Discuter d\'un système',
   },
 ]
 
@@ -58,11 +54,11 @@ function Row({ s, i }: { s: Service; i: number }) {
         className="editorial-list-row"
         style={{
           display: 'grid',
-          gridTemplateColumns: '120px minmax(0, 1fr) minmax(0, 1fr) 220px',
-          gap: 32,
+          gridTemplateColumns: '110px minmax(260px, 0.8fr) minmax(340px, 1.2fr) auto',
+          gap: 36,
           padding: '36px 0',
           borderTop: '1px solid var(--ink-faint)',
-          alignItems: 'baseline',
+          alignItems: 'center',
           position: 'relative',
           transition: 'background 0.4s ease, padding 0.4s ease',
           background: hover ? 'rgba(217,119,6,0.04)' : 'transparent',
@@ -127,26 +123,7 @@ function Row({ s, i }: { s: Service; i: number }) {
           {s.desc}
         </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'flex-start' }}>
-          {s.meta.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {s.meta.map(m => (
-                <span
-                  key={m}
-                  className="mono"
-                  style={{
-                    fontSize: 10,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.2em',
-                    color: 'var(--ink-muted)',
-                  }}
-                >
-                  · {m}
-                </span>
-              ))}
-            </div>
-          )}
-
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <span
             className="mono"
             style={{
@@ -157,6 +134,7 @@ function Row({ s, i }: { s: Service; i: number }) {
               color: hover ? 'var(--ember-hot)' : 'var(--ink)',
               display: 'inline-flex',
               alignItems: 'center',
+              whiteSpace: 'nowrap',
               gap: 8,
               borderBottom: '1px solid currentColor',
               paddingBottom: 4,
@@ -207,7 +185,7 @@ export default function ServicesSection() {
                   color: 'var(--ink)',
                 }}
               >
-                Trois façons de construire plus vite.
+                Trois leviers pour construire plus loin.
               </h2>
             </div>
             <p
@@ -219,8 +197,9 @@ export default function ServicesSection() {
                 justifySelf: 'end',
               }}
             >
-              Du cadrage à la mise en ligne, nous privilégions les interfaces
-              compréhensibles, les choix techniques sobres et les livrables réellement utilisables.
+              Nous partons des usages, puis nous choisissons la bonne couche :
+              produit logiciel, système IA ou interface métier. L’objectif reste
+              le même : créer un avantage technique exploitable.
             </p>
           </div>
         </AnimatedSection>
@@ -238,4 +217,3 @@ export default function ServicesSection() {
     </section>
   )
 }
-

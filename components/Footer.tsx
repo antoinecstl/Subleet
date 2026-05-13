@@ -60,7 +60,7 @@ export default function Footer() {
             fontWeight: 400,
           }}
         >
-          Produits SaaS, automatisation IA et interfaces web.
+          Produits logiciels, IA appliquée et interfaces métier.
         </div>
       </div>
 
@@ -85,8 +85,8 @@ export default function Footer() {
               marginBottom: 18,
             }}
           >
-            Conception de produits digitaux, sites performants et automatisations
-            pour projets SaaS et entreprises.
+            Conception de produits logiciels, systèmes IA et plateformes métier
+            pour projets ambitieux.
           </p>
         </div>
 
@@ -205,4 +205,3 @@ export default function Footer() {
     </footer>
   )
 }
-
