@@ -51,7 +51,7 @@ function Row({ s, i }: { s: Service; i: number }) {
         href={s.href}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
-        className="editorial-list-row"
+        className="editorial-list-row services-list-row"
         style={{
           display: 'grid',
           gridTemplateColumns: '110px minmax(260px, 0.8fr) minmax(340px, 1.2fr) auto',
@@ -80,7 +80,7 @@ function Row({ s, i }: { s: Service; i: number }) {
         />
 
         <span
-          className="index-num"
+          className="index-num service-num"
           style={{
             fontSize: 'clamp(64px, 7vw, 96px)',
             fontStyle: hover ? 'italic' : 'normal',
@@ -92,10 +92,10 @@ function Row({ s, i }: { s: Service; i: number }) {
           {s.no}
         </span>
 
-        <div>
+        <div className="service-heading">
           <div className="eyebrow" style={{ marginBottom: 10 }}>{s.tag}</div>
           <h3
-            className="display"
+            className="display service-title"
             style={{
               fontSize: 'clamp(28px, 3vw, 44px)',
               fontWeight: 600,
@@ -123,7 +123,7 @@ function Row({ s, i }: { s: Service; i: number }) {
           {s.desc}
         </p>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div className="service-action" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <span
             className="mono"
             style={{

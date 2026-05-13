@@ -1,13 +1,13 @@
 <claude-mem-context>
 # Memory Context
 
-# [Website] recent context, 2026-05-13 12:21pm GMT+2
+# [Website] recent context, 2026-05-13 2:58pm GMT+2
 
 Legend: 🎯session 🔴bugfix 🟣feature 🔄refactor ✅change 🔵discovery ⚖️decision 🚨security_alert 🔐security_note
 Format: ID TIME TYPE TITLE
 Fetch details: get_observations([IDs]) | Search: mem-search skill
 
-Stats: 38 obs (13 969t read) | 307 284t work | 95% savings
+Stats: 40 obs (14 521t read) | 311 558t work | 95% savings
 
 ### May 13, 2026
 120 12:25a 🔵 Subleet Design Token System in lib/theme.ts
@@ -49,6 +49,24 @@ S9 Frontend redesign of Subleet website — full "Atelier Éditorial" rebrand re
 161 12:21p 🟣 CLAUDE.md Initialization Requested
 162 " ✅ Subleet Website Positioning Rewrite — Copy Overhaul Across 4 Files
 163 " 🔵 Subleet Blog Content — Static TypeScript Data File with 4 Posts
+164 " ✅ Blog Post Category Normalized: 'IA technique' → 'IA'
+165 12:23p 🔄 ServicesSection Layout Refactored — Meta Field Removed, Grid Columns Rebalanced
+S10 User asked Claude to read CLAUDE.md for the Subleet website project (May 13, 12:36 PM)
+**Investigated**: CLAUDE.md file at c:\Opt\Projet_Info\Subleet\Website\claude.md was read and summarized
 
-Access 307k tokens of past work via get_observations([IDs]) or mem-search skill.
+**Learned**: - Project: Subleet website built with Next.js App Router, React 19, TypeScript, in French
+    - Key commands: npm run dev, npm run build, npx tsc --noEmit
+    - Structure: app/ for routes/layouts/API, components/ for reusable sections, lib/theme.ts for design tokens, public/assets/ for static assets
+    - Imports use @/ alias, TypeScript typing required throughout
+    - Visual identity: warm cream background, dark brown text, amber accent, Poppins + DM Sans fonts
+    - Colors/fonts must go through lib/theme.ts
+    - No large refactors for targeted changes
+    - Contact API at app/api/contact/route.ts uses Resend with RESEND_API_KEY
+
+**Completed**: CLAUDE.md read and project context established — no code changes made
+
+**Next Steps**: Awaiting user instructions on what to work on in the Subleet website project
+
+
+Access 312k tokens of past work via get_observations([IDs]) or mem-search skill.
 </claude-mem-context>

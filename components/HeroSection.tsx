@@ -5,6 +5,7 @@ import Link from 'next/link'
 export default function HeroSection() {
   return (
     <section
+      className="home-hero"
       style={{
         position: 'relative',
         paddingTop: 'clamp(104px, 12vh, 142px)',
@@ -57,7 +58,7 @@ export default function HeroSection() {
           </h1>
 
           <div
-            className="rise"
+            className="rise hero-copy-actions"
             style={{
               marginTop: 34,
               display: 'grid',
@@ -82,7 +83,7 @@ export default function HeroSection() {
               est notre premier produit public.
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
+            <div className="hero-actions" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
               <Link href="/products" className="btn-ember">
                 Voir les produits
               </Link>
